@@ -120,8 +120,6 @@ $(function(){
 
             console.log("Stated Chat");
 
-			chats.empty();
-
 			if(name === data.users[0]) {
 
 				showMessage("youStartedChatWithNoMessages",data);
