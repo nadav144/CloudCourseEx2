@@ -63,7 +63,7 @@ module.exports = function(app,io){
 			var room = findClientsSocket(io, data.id);
 			// Only two people per room are allowed
 
-			console.log(room);
+			console.log(room.length);
 
 
 			// Use the socket object to store data. Each client gets
@@ -85,8 +85,17 @@ module.exports = function(app,io){
 				var usernames = [],
 					avatars = [];
 
-				usernames.push(room[0].username);
+
+                console.log("room");
+                console.log(room.length);
+
+				for (var i=0; i< room.length; i++){
+                    console.log("user");
+                    usernames.push(room[i].username);
+                }
 				usernames.push(socket.username);
+
+                console.log(usernames);
 
 				avatars.push(room[0].avatar);
 				avatars.push(socket.avatar);
@@ -103,7 +112,16 @@ module.exports = function(app,io){
 			}
 		});
 
-		// Somebody left the chat
+        socket.on('receive', function(data){
+
+            if(data.msg.trim().length) {
+                createChatMessage(data.msg, data.user, data.img, moment());
+                scrollToBottom();
+            }
+        });
+
+
+        // Somebody left the chat
 		socket.on('disconnect', function() {
 
 			// Notify the other person in the chat room

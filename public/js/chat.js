@@ -36,6 +36,7 @@ $(function(){
 		chatForm = $("#chatform"),
 		textarea = $("#message"),
 		messageTimeSent = $(".timesent"),
+        players = $("#players"),
 		chats = $(".chats");
 
 	// these variables hold images
@@ -115,7 +116,7 @@ $(function(){
 	// Other useful 
 
 	socket.on('startChat', function(data){
-		console.log(data);
+
 		if(data.boolean && data.id == id) {
 
             console.log("Stated Chat");
@@ -128,6 +129,24 @@ $(function(){
 
 				showMessage("heStartedChatWithNoMessages",data);
 			}
+
+            console.log(data);
+
+            players.empty();
+            data.users.forEach(function(curr){
+                console.log(curr);
+                var p = $(
+
+                    '<p>' + curr + '</p>'
+                );
+
+                // use the 'text' method to escape malicious user input
+
+                players.append(p);
+
+
+
+            });
 
 			chatNickname.text(friend);
 		}
@@ -282,7 +301,7 @@ $(function(){
 				});
 			});
 
-			friend = data.users[1];
+			friends = data.users.join();
 			noMessagesImage.attr("src",data.avatars[1]);
 		}
 
@@ -291,10 +310,16 @@ $(function(){
 			personInside.fadeOut(1200,function(){
 				noMessages.fadeIn(1200);
 				footer.fadeIn(1200);
+
 			});
 
-			friend = data.users[0];
+			friends = data.users.join();
 			noMessagesImage.attr("src",data.avatars[0]);
+            console.log("here");
+            console.log(data.users);
+
+
+
 		}
 
 		else if(status === "chatStarted"){

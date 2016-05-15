@@ -643,3 +643,8 @@ footer {
 	margin: 0 auto 200px;
 	overflow:hidden;
 }
+
+
+#players{
+	display: block;
+}
