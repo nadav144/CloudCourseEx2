@@ -36,6 +36,7 @@ $(function(){
 		chatForm = $("#chatform"),
 		textarea = $("#message"),
 		messageTimeSent = $(".timesent"),
+        players = $("#players"),
 		chats = $(".chats");
 
 	// these variables hold images
@@ -46,7 +47,7 @@ $(function(){
 
 	// on connection to server get the id of person's room
 	socket.on('connect', function(){
-
+        console.log("load");
 		socket.emit('load', id);
 	});
 
@@ -57,7 +58,7 @@ $(function(){
 
 	// receive the names and avatars of all people in the chat room
 	socket.on('peopleinchat', function(data){
-
+        console.log(data);
 		if(data.number === 0){
 
 			showMessage("connected");
@@ -84,45 +85,41 @@ $(function(){
 			});
 		}
 
-		else if(data.number >= 1) {
-
-			showMessage("personinchat",data);
-
-			loginForm.on('submit', function(e){
-
-				e.preventDefault();
-
-				name = $.trim(hisName.val());
-
-				if(name.length < 1){
-					alert("Please enter a nick name longer than 1 character!");
-					return;
-				}
-
-				if(name == data.user){
-					alert("There already is a \"" + name + "\" in this room!");
-					return;
-				}
-
-				socket.emit('login', {user: name, avatar: "", id: id});
-
-
-			});
-		}
-
 		else {
-			showMessage("tooManyPeople");
-		}
+
+            showMessage("personinchat", data);
+
+            loginForm.on('submit', function (e) {
+
+                e.preventDefault();
+
+                name = $.trim(hisName.val());
+
+                if (name.length < 1) {
+                    alert("Please enter a nick name longer than 1 character!");
+                    return;
+                }
+
+                if (name == data.user) {
+                    alert("There already is a \"" + name + "\" in this room!");
+                    return;
+                }
+
+                socket.emit('login', {user: name, avatar: "", id: id});
+
+
+            });
+        }
 
 	});
 
 	// Other useful 
 
 	socket.on('startChat', function(data){
-		console.log(data);
+
 		if(data.boolean && data.id == id) {
 
-			chats.empty();
+            console.log("Stated Chat");
 
 			if(name === data.users[0]) {
 
@@ -132,6 +129,24 @@ $(function(){
 
 				showMessage("heStartedChatWithNoMessages",data);
 			}
+
+            console.log(data);
+
+            players.empty();
+            data.users.forEach(function(curr){
+                console.log(curr);
+                var p = $(
+
+                    '<p>' + curr + '</p>'
+                );
+
+                // use the 'text' method to escape malicious user input
+
+                players.append(p);
+
+
+
+            });
 
 			chatNickname.text(friend);
 		}
@@ -147,13 +162,13 @@ $(function(){
 
 	});
 
-	socket.on('tooMany', function(data){
-
-		if(data.boolean && name.length === 0) {
-
-			showMessage('tooManyPeople');
-		}
-	});
+	//socket.on('tooMany', function(data){
+    //
+	//	if(data.boolean && name.length === 0) {
+    //
+	//		showMessage('tooManyPeople');
+	//	}
+	//});
 
 	socket.on('receive', function(data){
 
@@ -286,7 +301,7 @@ $(function(){
 				});
 			});
 
-			friend = data.users[1];
+			friends = data.users.join();
 			noMessagesImage.attr("src",data.avatars[1]);
 		}
 
@@ -295,10 +310,16 @@ $(function(){
 			personInside.fadeOut(1200,function(){
 				noMessages.fadeIn(1200);
 				footer.fadeIn(1200);
+
 			});
 
-			friend = data.users[0];
+			friends = data.users.join();
 			noMessagesImage.attr("src",data.avatars[0]);
+            console.log("here");
+            console.log(data.users);
+
+
+
 		}
 
 		else if(status === "chatStarted"){
