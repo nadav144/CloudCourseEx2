@@ -73,23 +73,18 @@ $(function(){
 					return;
 				}
 
-				email = yourEmail.val();
-
-				if(!isValid(email)) {
-					alert("Please enter a valid email!");
-				}
 				else {
 
 					showMessage("inviteSomebody");
 
 					// call the server-side function 'login' and send user's parameters
-					socket.emit('login', {user: name, avatar: email, id: id});
+					socket.emit('login', {user: name, avatar: "", id: id});
 				}
 			
 			});
 		}
 
-		else if(data.number === 1) {
+		else if(data.number >= 1) {
 
 			showMessage("personinchat",data);
 
@@ -108,14 +103,9 @@ $(function(){
 					alert("There already is a \"" + name + "\" in this room!");
 					return;
 				}
-				email = hisEmail.val();
 
-				if(!isValid(email)){
-					alert("Wrong e-mail format!");
-				}
-				else {
-					socket.emit('login', {user: name, avatar: email, id: id});
-				}
+				socket.emit('login', {user: name, avatar: "", id: id});
+
 
 			});
 		}
