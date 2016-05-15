@@ -46,7 +46,7 @@ $(function(){
 
 	// on connection to server get the id of person's room
 	socket.on('connect', function(){
-
+        console.log("load");
 		socket.emit('load', id);
 	});
 
@@ -57,7 +57,7 @@ $(function(){
 
 	// receive the names and avatars of all people in the chat room
 	socket.on('peopleinchat', function(data){
-
+        console.log(data);
 		if(data.number === 0){
 
 			showMessage("connected");
@@ -84,35 +84,31 @@ $(function(){
 			});
 		}
 
-		else if(data.number >= 1) {
-
-			showMessage("personinchat",data);
-
-			loginForm.on('submit', function(e){
-
-				e.preventDefault();
-
-				name = $.trim(hisName.val());
-
-				if(name.length < 1){
-					alert("Please enter a nick name longer than 1 character!");
-					return;
-				}
-
-				if(name == data.user){
-					alert("There already is a \"" + name + "\" in this room!");
-					return;
-				}
-
-				socket.emit('login', {user: name, avatar: "", id: id});
-
-
-			});
-		}
-
 		else {
-			showMessage("tooManyPeople");
-		}
+
+            showMessage("personinchat", data);
+
+            loginForm.on('submit', function (e) {
+
+                e.preventDefault();
+
+                name = $.trim(hisName.val());
+
+                if (name.length < 1) {
+                    alert("Please enter a nick name longer than 1 character!");
+                    return;
+                }
+
+                if (name == data.user) {
+                    alert("There already is a \"" + name + "\" in this room!");
+                    return;
+                }
+
+                socket.emit('login', {user: name, avatar: "", id: id});
+
+
+            });
+        }
 
 	});
 
@@ -121,6 +117,8 @@ $(function(){
 	socket.on('startChat', function(data){
 		console.log(data);
 		if(data.boolean && data.id == id) {
+
+            console.log("Stated Chat");
 
 			chats.empty();
 
@@ -147,13 +145,13 @@ $(function(){
 
 	});
 
-	socket.on('tooMany', function(data){
-
-		if(data.boolean && name.length === 0) {
-
-			showMessage('tooManyPeople');
-		}
-	});
+	//socket.on('tooMany', function(data){
+    //
+	//	if(data.boolean && name.length === 0) {
+    //
+	//		showMessage('tooManyPeople');
+	//	}
+	//});
 
 	socket.on('receive', function(data){
 
