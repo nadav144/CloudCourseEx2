@@ -45,6 +45,7 @@ $(function () {
         noMessagesImage = $("#noMessagesImage");
 
 
+
     var getTimeRemaining = function getTimeRemaining(endtime) {
         var t = Date.parse(endtime) - Date.parse(new Date());
         var seconds = Math.floor((t / 1000) % 60);
@@ -84,8 +85,12 @@ $(function () {
 
     var updatePlayers = function(users, next){
 
+
+
         var deadline = new Date(Date.parse(new Date()) + 10 * 1000);
         initializeClock('clockdiv', deadline);
+
+        $('audio')[0].play();
 
         if (next === name){
             chatForm.fadeIn(200);
