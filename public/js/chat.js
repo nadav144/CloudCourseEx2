@@ -30,6 +30,7 @@ $(function () {
         leftNickname = $(".nickname-left"),
         loginForm = $(".loginForm"),
         yourName = $("#yourName"),
+        gameLines = $("#gameLines"),
         yourEmail = $("#yourEmail"),
         hisName = $("#hisName"),
         hisEmail = $("#hisEmail"),
@@ -44,6 +45,7 @@ $(function () {
         leftImage = $("#leftImage"),
         noMessagesImage = $("#noMessagesImage");
 
+    var myturn;
 
 
     var getTimeRemaining = function getTimeRemaining(endtime) {
@@ -85,18 +87,18 @@ $(function () {
 
     var updatePlayers = function(users, next){
 
-
-
-        var deadline = new Date(Date.parse(new Date()) + 10 * 1000);
+        var turnLen = 15;
+        var deadline = new Date(Date.parse(new Date()) + turnLen * 1000);
         initializeClock('clockdiv', deadline);
 
         $('audio')[0].play();
 
         if (next === name){
             chatForm.fadeIn(200);
+            myturn = true;
         } else {
             chatForm.fadeOut(200);
-
+            myturn = false;
         }
         players.empty();
         users.forEach(function (curr) {
@@ -180,7 +182,7 @@ $(function () {
                     return;
                 }
 
-                socket.emit('login', {user: name, avatar: "", id: id});
+                socket.emit('login', {user: name, avatar: "", id: id, gamelines: gameLines.val()});
 
 
             });
@@ -246,7 +248,11 @@ $(function () {
         showMessage('chatStarted');
 
         if (data.msg.trim().length) {
-            createChatMessage(data.msg, data.user, data.img, moment());
+            if (myturn) {
+                createChatMessage(data.msg, data.user, data.img, moment());
+            } else {
+                createChatMessage("\<hidden message\>", data.user, data.img, moment());
+            }
             scrollToBottom();
         }
     });
