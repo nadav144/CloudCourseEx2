@@ -5,6 +5,8 @@
 // Use the gravatar module, to turn email addresses into avatar images:
 
 var gravatar = require('gravatar');
+var games = {};
+var game = require('./game.js');
 
 // Export a function, so that we can pass 
 // the app and io instances from the app.js file:
@@ -69,7 +71,9 @@ module.exports = function(app,io){
 			// Only two people per room are allowed
 
 			console.log(room.length);
-
+			if (! game[data.id]) {
+				games[data.id] = new game.game(data.id, data.user);
+			}
 
 			// Use the socket object to store data. Each client gets
 			// their own unique socket object
@@ -118,7 +122,8 @@ module.exports = function(app,io){
 		});
 
         socket.on('receive', function(data){
-
+			console.log("in socket.on recieve");
+			console.log(data);
             if(data.msg.trim().length) {
                 createChatMessage(data.msg, data.user, data.img, moment());
                 scrollToBottom();
@@ -146,6 +151,17 @@ module.exports = function(app,io){
 
 		// Handle the sending of messages
 		socket.on('msg', function(data){
+			// console.log("games so far:");
+			// console.log(games);
+            //
+			// console.log("in socket.on msg");
+			// console.log(data);
+			// console.log(socket.room);
+			games[socket.room].addMsg(data.user, data.msg);
+
+
+			// console.log("msgs so far");
+			// console.log(games[socket.room].messages);
 
 			// When the server receives a message, it sends it to the other person in the room.
 			socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user, img: data.img});
