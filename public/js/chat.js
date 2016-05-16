@@ -160,6 +160,8 @@ $(function () {
 
     });
 
+
+
     socket.on('nextturn', function (data) {
         console.log(data.id);
         players.empty();

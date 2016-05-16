@@ -8,7 +8,7 @@ var gravatar = require('gravatar');
 var games = {};
 var game = require('./game.js');
 
-var r
+var turnLen = 10;
 
 // Export a function, so that we can pass 
 // the app and io instances from the app.js file:
@@ -53,7 +53,7 @@ module.exports = function(app,io){
         setTimeout(function(){
             var timeruser = nextUser;
             nextTurn(chat, id, timeruser);
-        }, 10 * 1000)
+        }, turnLen * 1000)
     }
 
 	app.get('/', function(req, res){
@@ -165,7 +165,7 @@ module.exports = function(app,io){
 
                 setTimeout(function(){
                     nextTurn(chat, data.id, socket.username);
-                }, 10 * 1000)
+                }, turnLen * 1000)
 
 
 			}
@@ -201,13 +201,10 @@ module.exports = function(app,io){
 
 		// Handle the sending of messages
 		socket.on('msg', function(data){
-			// console.log("games so far:");
-			// console.log(games);
-            //
-			// console.log("in socket.on msg");
-			// console.log(data);
-			// console.log(socket.room);
+
 			games[socket.room].addMsg(data.user, data.msg);
+
+            nextTurn(chat,socket.room,data.user);
 
 
 			// console.log("msgs so far");
