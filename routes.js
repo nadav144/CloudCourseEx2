@@ -24,7 +24,7 @@ module.exports = function(app,io){
             // we were called before already
             return;
         }
-        console.log(curruser);
+
         var usernames = [];
         for (var i=0; i< room.length; i++){
             usernames.push(room[i].username);
@@ -50,7 +50,9 @@ module.exports = function(app,io){
 
         });
 
-        setTimeout(function(){
+
+        games[id].clearTimer();
+        games[id].timer = setTimeout(function(){
             var timeruser = nextUser;
             nextTurn(chat, id, timeruser);
         }, turnLen * 1000)
@@ -159,11 +161,12 @@ module.exports = function(app,io){
 					boolean: true,
 					id: data.id,
 					users: usernames,
+                    currUser: games[data.id].curTurn,
 					avatars: avatars
 				});
 
-
-                setTimeout(function(){
+                games[data.id].clearTimer();
+                games[data.id].timer = setTimeout(function(){
                     nextTurn(chat, data.id, socket.username);
                 }, turnLen * 1000)
 

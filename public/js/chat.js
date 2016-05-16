@@ -44,10 +44,37 @@ $(function () {
         leftImage = $("#leftImage"),
         noMessagesImage = $("#noMessagesImage");
 
+    var updatePlayers = function(users, next){
+        if (next === name){
+            chatForm.fadeIn(200);
+        } else {
+            chatForm.fadeOut(200);
+
+        }
+        players.empty();
+        users.forEach(function (curr) {
+
+            if (next === curr) {
+                var p = $(
+                    '<p><b>' + curr + '</b></p>'
+                );
+            }
+            else {
+                var p = $(
+                    '<p>' + curr + '</p>'
+                );
+            }
+
+            // use the 'text' method to escape malicious user input
+
+            players.append(p);
+
+        });
+    }
+
 
     // on connection to server get the id of person's room
     socket.on('connect', function () {
-        console.log("load");
         socket.emit('load', id);
     });
 
@@ -58,7 +85,7 @@ $(function () {
 
     // receive the names and avatars of all people in the chat room
     socket.on('peopleinchat', function (data) {
-        console.log(data);
+
         if (data.number === 0) {
 
             showMessage("connected");
@@ -80,6 +107,7 @@ $(function () {
 
                     // call the server-side function 'login' and send user's parameters
                     socket.emit('login', {user: name, avatar: "", id: id});
+
                 }
 
             });
@@ -119,7 +147,7 @@ $(function () {
 
         if (data.boolean && data.id == id) {
 
-            console.log("Stated Chat");
+
 
             if (name === data.users[0]) {
 
@@ -130,21 +158,9 @@ $(function () {
                 showMessage("heStartedChatWithNoMessages", data);
             }
 
-            console.log(data);
-
-            players.empty();
-            data.users.forEach(function (curr) {
-                console.log(curr);
-                var p = $(
-                    '<p>' + curr + '</p>'
-                );
-
-                // use the 'text' method to escape malicious user input
-
-                players.append(p);
 
 
-            });
+            updatePlayers(data.users, data.currUser);
 
             chatNickname.text(friend);
         }
@@ -163,27 +179,14 @@ $(function () {
 
 
     socket.on('nextturn', function (data) {
-        console.log(data.id);
-        players.empty();
-        data.users.forEach(function (curr) {
-            console.log(curr);
-            if (data.nextUser === curr) {
-                var p = $(
-                    '<p><b>' + curr + '</b></p>'
-                );
-            }
-            else {
-                var p = $(
-                    '<p>' + curr + '</p>'
-                );
-            }
 
-            // use the 'text' method to escape malicious user input
-
-            players.append(p);
+        console.log(data.nextUser );
+        console.log(name);
+        console.log(data.nextUser === name);
 
 
-        });
+        updatePlayers(data.users, data.nextUser);
+
     });
 
     //socket.on('tooMany', function(data){
@@ -339,8 +342,7 @@ $(function () {
 
             friends = data.users.join();
             noMessagesImage.attr("src", data.avatars[0]);
-            console.log("here");
-            console.log(data.users);
+
 
 
         }
