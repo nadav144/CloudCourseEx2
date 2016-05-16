@@ -37,7 +37,7 @@ module.exports = function(app,io){
 
 
         socket.on('populateRoomsRequest', function () {
-            socket.emit('populateRoomsResponse', getRoomIds(io));
+            socket.emit('populateRoomsResponse', roomsAndUsersCount(io));
         });
 
         // When the client emits the 'load' event, reply with the
@@ -153,6 +153,14 @@ module.exports = function(app,io){
 	});
 };
 
+function roomsAndUsersCount (io, namespace) {
+	var roomIds = getRoomIds(io, namespace);
+	var res = [];
+	roomIds.forEach(function(room) {
+		res.push({id: room, count: findClientsSocket(io, room, namespace).length})
+	});
+	return res;
+}
 
 function getRoomIds(io, namespace) {
     var res = [],
@@ -164,17 +172,6 @@ function getRoomIds(io, namespace) {
                 res.push(sock.room);
             }
         });
-        // for (var id in ns.sockets) {
-        //     var rooms = ns.connected[id].rooms;
-        //     rooms.forEach(function(room) {
-        //         res.push(room);
-        //     });
-            // for (var i=0; i<=rooms.length; i++) {
-            //     if (res.indexOf(rooms[i]) === -1 && rooms[i]!= id) {
-            //         res.push(rooms[i]);
-            //     }
-            // }
-        // }
     }
     var unqRes = [];
     var resLen = res.length;
