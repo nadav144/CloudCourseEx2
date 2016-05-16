@@ -44,7 +44,49 @@ $(function () {
         leftImage = $("#leftImage"),
         noMessagesImage = $("#noMessagesImage");
 
+
+    var getTimeRemaining = function getTimeRemaining(endtime) {
+        var t = Date.parse(endtime) - Date.parse(new Date());
+        var seconds = Math.floor((t / 1000) % 60);
+        var minutes = Math.floor((t / 1000 / 60) % 60);
+        var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+        var days = Math.floor(t / (1000 * 60 * 60 * 24));
+        return {
+            'total': t,
+            'days': days,
+            'hours': hours,
+            'minutes': minutes,
+            'seconds': seconds
+        };
+    };
+
+    var initializeClock = function initializeClock(id, endtime) {
+        var clock = document.getElementById(id);
+        var minutesSpan = clock.querySelector('.minutes');
+        var secondsSpan = clock.querySelector('.seconds');
+
+        function updateClock() {
+            var t = getTimeRemaining(endtime);
+
+            minutesSpan.innerHTML = ('0' + t.minutes).slice(-2);
+            secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
+
+            if (t.total <= 0) {
+                clearInterval(timeinterval);
+            }
+        }
+
+            updateClock();
+        var timeinterval = setInterval(updateClock, 1000);
+    };
+
+
+
     var updatePlayers = function(users, next){
+
+        var deadline = new Date(Date.parse(new Date()) + 10 * 1000);
+        initializeClock('clockdiv', deadline);
+
         if (next === name){
             chatForm.fadeIn(200);
         } else {
@@ -170,8 +212,8 @@ $(function () {
 
         if (data.boolean && id == data.room) {
 
-            showMessage("somebodyLeft", data);
-            chats.empty();
+            //showMessage("somebodyLeft", data);
+            //chats.empty();
         }
 
     });
@@ -180,9 +222,6 @@ $(function () {
 
     socket.on('nextturn', function (data) {
 
-        console.log(data.nextUser );
-        console.log(name);
-        console.log(data.nextUser === name);
 
 
         updatePlayers(data.users, data.nextUser);
@@ -369,5 +408,7 @@ $(function () {
             tooManyPeople.fadeIn(1200);
         }
     }
+
+
 
 });
