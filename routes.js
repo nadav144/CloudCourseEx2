@@ -115,7 +115,7 @@ module.exports = function(app,io){
 
 			console.log(room.length);
 			if (! game[data.id]) {
-				games[data.id] = new game.game(data.id, data.user);
+				games[data.id] = new game.game(data.id, data.user, data.gamelines);
 			}
 
 			// Use the socket object to store data. Each client gets
