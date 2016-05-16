@@ -8,10 +8,53 @@ var gravatar = require('gravatar');
 var games = {};
 var game = require('./game.js');
 
+var r
+
 // Export a function, so that we can pass 
 // the app and io instances from the app.js file:
 
 module.exports = function(app,io){
+
+
+    function nextTurn(chat, id, turnUser){
+
+        var room = findClientsSocket(io, id);
+        var curruser = games[id].curTurn;
+        if (turnUser != curruser){
+            // we were called before already
+            return;
+        }
+        console.log(curruser);
+        var usernames = [];
+        for (var i=0; i< room.length; i++){
+            usernames.push(room[i].username);
+        }
+        var nextUser = "";
+        var currIndex = usernames.indexOf(curruser);
+        if (currIndex == usernames.length - 1){
+            nextUser = usernames[0];
+        } else { // if index is -1, we will choose 0
+            nextUser = usernames[currIndex + 1];
+        }
+
+        games[id].curTurn = nextUser;
+
+
+        console.log(currIndex);
+        console.log(nextUser);
+        chat.in(id).emit('nextturn', {
+            boolean: true,
+            id: id,
+            nextUser: nextUser,
+            users: usernames
+
+        });
+
+        setTimeout(function(){
+            var timeruser = nextUser;
+            nextTurn(chat, id, timeruser);
+        }, 10 * 1000)
+    }
 
 	app.get('/', function(req, res){
 
@@ -118,6 +161,13 @@ module.exports = function(app,io){
 					users: usernames,
 					avatars: avatars
 				});
+
+
+                setTimeout(function(){
+                    nextTurn(chat, data.id, socket.username);
+                }, 10 * 1000)
+
+
 			}
 		});
 
