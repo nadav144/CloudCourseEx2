@@ -2,7 +2,7 @@
 
 $(function () {
 
-    // getting the id of the room from the url
+    // getting the gameID of the room from the url
     var id = Number(window.location.pathname.match(/\/chat\/(\d+)$/)[1]);
 
     // connect to the socket
@@ -122,7 +122,7 @@ $(function () {
     }
 
 
-    // on connection to server get the id of person's room
+    // on connection to server get the gameID of person's room
     socket.on('connect', function () {
         socket.emit('load', id);
     });
@@ -155,7 +155,7 @@ $(function () {
                     showMessage("inviteSomebody");
 
                     // call the server-side function 'login' and send user's parameters
-                    socket.emit('login', {user: name, avatar: "", id: id});
+                    socket.emit('login', {user: name, avatar: "", gameID: id});
 
                 }
 
@@ -182,7 +182,7 @@ $(function () {
                     return;
                 }
 
-                socket.emit('login', {user: name, avatar: "", id: id, gamelines: gameLines.val()});
+                socket.emit('login', {user: name, avatar: "", gameID: id, gamelines: gameLines.val()});
 
 
             });
@@ -194,7 +194,7 @@ $(function () {
 
     socket.on('startChat', function (data) {
 
-        if (data.boolean && data.id == id) {
+        if (data.boolean && data.gameID == id) {
 
 
 

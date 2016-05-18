@@ -8,19 +8,19 @@ $(function() {
     socket.on('populateRoomsResponse', function (roomIds) {
         roomIds.forEach(function(room) {
             var li = $(
-                //'<li><p><a href="chat/'+ id.toString() +'">' + id.toString() + '</a></p></li>'
+                //'<li><p><a href="chat/'+ gameID.toString() +'">' + gameID.toString() + '</a></p></li>'
 
-                '<a title="Join" href="chat/'+ room.id.toString() +'">' +
+                '<a title="Join" href="chat/'+ room.gameID.toString() +'">' +
                 '<div class="openchat">' +
-                '<div id="big">' + room.id.toString() + '</div>' +
-                '<div id="small">Users: ' + room.count.toString() + '</div>' +
+                '<div gameID="big">' + room.gameID.toString() + '</div>' +
+                '<div gameID="small">Users: ' + room.count.toString() + '</div>' +
                 '</a>'
            );
            rooms.append(li);
        })
     });
 
-    // // on connection to server get the id of person's room
+    // // on connection to server get the gameID of person's room
     // socket.on('connect', function(){
     //
     //     socket.emit('mytest', 8);
