@@ -94,6 +94,7 @@ module.exports = function(app,io){
             if (!games[data.gameID]) {
                 var newGame = new game.game(data.gameID, data.user, data.gamelines);
                 games[data.gameID] = newGame;
+                console.log("adding game " + data.gameID.toString() + " to the db");
                 gamesdb.addGame(newGame, function() {gamesdb.printGames()});
             }
             // Use the socket object to store data. Each client gets
@@ -158,9 +159,9 @@ module.exports = function(app,io){
             if (games[this.room]) {
                 if (!games[this.room].removePlayer(this.username)) {
 
-                    // TODO: REMOVE DELETED GAMES FROM THE GAMES OBJECT
-                    // games.splice(games.indexOf(this.room), 1);
-                    
+                    delete games[this.room.toString()];
+
+                    console.log("removing room: " + this.room.toString() + " from the db");
                     gamesdb.deleteGame(this.room, function () {
                         gamesdb.printGames();
                     });
@@ -175,8 +176,11 @@ module.exports = function(app,io){
         // Handle the sending of messages
         socket.on('msg', function(data){
             var game = games[socket.room];
-
-            game.addMsg(data.user, data.msg);
+            var msg = {player: data.user, msg:data.msg};
+            game.addMsg(msg);
+            gamesdb.addMsgToGame(game.gameID, msg, function() {
+                gamesdb.printGames();
+            });
             //TODO: ADD MONGO SUPPORT
 
             if (game.messages.length >= game.maxLines){

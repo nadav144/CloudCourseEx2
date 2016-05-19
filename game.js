@@ -10,8 +10,8 @@ module.exports.game = function (roomid, player, gamelines) {
     this.latestUpdate = Date.now(); //todo: maybe redundant
 
 
-    this.addMsg = function (player, msg) {
-        this.messages.push({player: player, msg: msg});
+    this.addMsg = function (msg) {
+        this.messages.push(msg);
 
         this.latestUpdate = Date.now();
     };

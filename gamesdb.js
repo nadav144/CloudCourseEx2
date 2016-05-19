@@ -2,11 +2,12 @@
 var MongoClient = require('mongodb').MongoClient;
 var gamesdb;
 var collection;
-var ready = false;
+var ready = 0;
 
 // Connect to the db
 MongoClient.connect("mongodb://localhost:27017/exampleDb", function(err, db) {
     if(err) {
+        ready = -1;
         return console.dir(err);
     }
     gamesdb = db;
@@ -42,19 +43,24 @@ MongoClient.connect("mongodb://localhost:27017/exampleDb", function(err, db) {
     // collection.insert(doc, {w:1}, function(err, res) {
     //     printCollection(collection);
     // });
+
+
     clearDB(); //TODO: THIS CALL CLEARS THE DB EVERY TIME THE SERVER RESTARTS
-    ready = true;
+    console.log("get rid of this db clear");
+    ready = 1;
 });
 
 function getGames (callback) {
-    if (ready) {
+    if (ready === 1) {
         collection.find().toArray(function(err, items) {
             callback (err, items);
         })
-    } else {
+    } else if (ready === 0){
         setTimeout(function(cback) {
             getGames(cback);
-        })
+        }, 0);
+    } else {
+        throw "db did not start properly. could not retrieve games";
     }
 }
 
@@ -96,6 +102,42 @@ module.exports.deleteGame = function (id, callback) {
                 callback(err, result);
             }
         })
+    } else {
+        console.log("db is down");
+    }
+};
+
+module.exports.addMsgToGame = function (id, msg, callback) {
+    if (collection) {
+        collection.update({gameID:id}, {$push:{messages:msg}}, {w:1}, function(err, result) {
+            if (callback) {
+                callback(err, result);
+            }
+        })
+    } else {
+        console.log("db is down");
+    }
+};
+
+module.exports.setNextTurn = function (id, player, callback) {
+    if (collection) {
+        //todo this
+    } else {
+        console.log("db is down");
+    }
+};
+
+module.exports.addPlayerToGame = function (id, player, callback) {
+    if (collection) {
+        //todo this
+    } else {
+        console.log("db is down");
+    }
+};
+
+module.exports.delPlayerFromGame = function (id, player, callback) {
+    if (collection) {
+        //todo this
     } else {
         console.log("db is down");
     }
