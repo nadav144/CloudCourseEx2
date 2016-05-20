@@ -3,13 +3,24 @@
 // and listens for socket.io messages.
 // Use the gravatar module, to turn email addresses into avatar images:
 var gravatar = require('gravatar');
-var games = {};
 var game = require('./game.js');
 var turnLen = 30;
 // Export a function, so that we can pass 
 // the app and io instances from the app.js file:
 
 var gamesdb = require('./gamesdb.js');
+
+
+var games;
+gamesdb.getAllGames(function(err, result) {
+    if (err) {
+        console.log(err);
+    } else {
+        games = result;
+        console.log("got all games from the database");
+        console.log(games);
+    }
+});
 
 
 

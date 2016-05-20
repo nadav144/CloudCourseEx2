@@ -47,8 +47,8 @@ MongoClient.connect("mongodb://localhost:27017/exampleDb", function(err, db) {
     ready = 1;
 
 
-    clearDB(); //TODO: THIS CALL CLEARS THE DB EVERY TIME THE SERVER RESTARTS
-    console.log("get rid of this db clear");
+    // clearDB(); //TODO: THIS CALL CLEARS THE DB EVERY TIME THE SERVER RESTARTS
+    // console.log("get rid of this db clear");
 });
 
 function getGames (callback) {
@@ -57,13 +57,16 @@ function getGames (callback) {
             callback (err, items);
         })
     } else if (ready === 0){
-        setTimeout(function(cback) {
-            getGames(cback);
-        }, 0);
+        console.log("db still not up, could not retrieve games. retrying...");
+        setTimeout(function() {
+            getGames(callback);
+        }, 100);
     } else {
         throw "db did not start properly. could not retrieve games";
     }
 }
+
+module.exports.getAllGames = getGames;
 
 
 function printCollection (collection, callback) {
@@ -155,6 +158,7 @@ module.exports.delPlayerFromGame = function (id, player, callback) {
         console.log("db is down");
     }
 };
+
 
 function clearDB() {
     if (collection) {
