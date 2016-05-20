@@ -35,7 +35,13 @@ module.exports = function(app,io){
         } else { // if index is -1, we will choose 0
             nextUser = usernames[currIndex + 1];
         }
+
         games[id].curTurn = nextUser;
+        gamesdb.setCurTurn(id, nextUser, function() {
+            console.log("updated cur turn of game: " + console.log(id) + " to be player " + console.log(nextUser));
+            // gamesdb.printGames();
+        });
+
         //console.log(currIndex);
         //console.log(nextUser);
         chat.in(id).emit('nextturn', {
@@ -96,6 +102,9 @@ module.exports = function(app,io){
                 games[data.gameID] = newGame;
                 console.log("adding game " + data.gameID.toString() + " to the db");
                 gamesdb.addGame(newGame, function() {gamesdb.printGames()});
+            } else {
+                games[data.gameID].addPlayer(data.user);
+                gamesdb.addPlayerToGame(data.gameID, data.user, function () {gamesdb.printGames()});
             }
             // Use the socket object to store data. Each client gets
             // their own unique socket object
@@ -165,6 +174,11 @@ module.exports = function(app,io){
                     gamesdb.deleteGame(this.room, function () {
                         gamesdb.printGames();
                     });
+                } else {
+                    console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
+                    gamesdb.delPlayerFromGame(this.room, this.username, function() {
+                        gamesdb.printGames();
+                    })
                 }
             } else {
                 console.log("in socket.on(disconnect) invalidly.");

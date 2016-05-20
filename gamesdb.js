@@ -43,11 +43,12 @@ MongoClient.connect("mongodb://localhost:27017/exampleDb", function(err, db) {
     // collection.insert(doc, {w:1}, function(err, res) {
     //     printCollection(collection);
     // });
+    
+    ready = 1;
 
 
     clearDB(); //TODO: THIS CALL CLEARS THE DB EVERY TIME THE SERVER RESTARTS
     console.log("get rid of this db clear");
-    ready = 1;
 });
 
 function getGames (callback) {
@@ -119,9 +120,13 @@ module.exports.addMsgToGame = function (id, msg, callback) {
     }
 };
 
-module.exports.setNextTurn = function (id, player, callback) {
+module.exports.setCurTurn = function (id, player, callback) {
     if (collection) {
-        //todo this
+        collection.update({gameID:id}, {$set:{curTurn:player}}, {w:1}, function(err, result) {
+            if (callback) {
+                callback(err, result);
+            }
+        })
     } else {
         console.log("db is down");
     }
@@ -129,7 +134,11 @@ module.exports.setNextTurn = function (id, player, callback) {
 
 module.exports.addPlayerToGame = function (id, player, callback) {
     if (collection) {
-        //todo this
+        collection.update({gameID:id}, {$push:{players:player}}, {w:1}, function(err, result) {
+            if (callback) {
+                callback(err, result);
+            }
+        })
     } else {
         console.log("db is down");
     }
@@ -137,7 +146,11 @@ module.exports.addPlayerToGame = function (id, player, callback) {
 
 module.exports.delPlayerFromGame = function (id, player, callback) {
     if (collection) {
-        //todo this
+        collection.update({gameID:id}, {$pull:{players:player}}, {w:1}, function(err, result) {
+            if (callback) {
+                callback(err, result);
+            }
+        })
     } else {
         console.log("db is down");
     }
