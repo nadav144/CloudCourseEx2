@@ -31,12 +31,14 @@ module.exports = function(app,io){
 
 
     function nextTurn(chat, id, turnUser){
+
         var room = findClientsSocket(io, id);
         var curruser = games[id].curTurn;
         if (turnUser != curruser){
             // we were called before already
             return;
         }
+
         var usernames = [];
         for (var i=0; i< room.length; i++){
             usernames.push(room[i].username);
@@ -62,7 +64,10 @@ module.exports = function(app,io){
             gameID: id,
             nextUser: nextUser,
             users: usernames
+
         });
+
+
         games[id].clearTimer();
         games[id].timer = setTimeout(function(){
             var timeruser = nextUser;
@@ -88,6 +93,7 @@ module.exports = function(app,io){
         socket.on('populateRoomsRequest', function () {
             socket.emit('populateRoomsResponse', roomsAndUsersCount(io));
         });
+
         // When the client emits the 'load' event, reply with the
         // number of people in this chat room
         socket.on('load',function(data){
@@ -107,27 +113,27 @@ module.exports = function(app,io){
         // When the client emits 'login', save his name and avatar,
         // and add them to the room
         socket.on('login', function(data) {
-            var room = findClientsSocket(io, data.gameID);
+            var room = findClientsSocket(io, data.id);
             // Only two people per room are allowed
             //console.log(room.length);
-            if (!games[data.gameID]) {
-                var newGame = new game.game(data.gameID, data.user, data.gamelines);
-                games[data.gameID] = newGame;
-                console.log("adding game " + data.gameID.toString() + " to the db");
+            if (!games[data.id]) {
+                var newGame = new game.game(data.id, data.user, data.gameLines);
+                games[data.id] = newGame;
+                console.log("adding game " + data.id.toString() + " to the db");
                 gamesdb.addGame(newGame, function() {gamesdb.printGames()});
             } else {
-                games[data.gameID].addPlayer(data.user);
-                gamesdb.addPlayerToGame(data.gameID, data.user, function () {gamesdb.printGames()});
+                games[data.id].addPlayer(data.user);
+                gamesdb.addPlayerToGame(data.id, data.user, function () {gamesdb.printGames()});
             }
             // Use the socket object to store data. Each client gets
             // their own unique socket object
             socket.username = data.user;
-            socket.room = data.gameID;
+            socket.room = data.id;
             socket.avatar = gravatar.url(data.avatar, {s: '140', r: 'x', d: 'mm'});
             // Tell the person what he should use for an avatar
             socket.emit('img', socket.avatar);
             // Add the client to the room
-            socket.join(data.gameID);
+            socket.join(data.id);
             if (room.length >= 1) {
                 var usernames = [],
                     avatars = [];
@@ -143,16 +149,16 @@ module.exports = function(app,io){
                 avatars.push(socket.avatar);
                 // Send the startChat event to all the people in the
                 // room, along with a list of people that are in it.
-                chat.in(data.gameID).emit('startChat', {
+                chat.in(data.id).emit('startChat', {
                     boolean: true,
-                    gameID: data.gameID,
+                    id: data.id,
                     users: usernames,
-                    currUser: games[data.gameID].curTurn,
+                    currUser: games[data.id].curTurn,
                     avatars: avatars
                 });
-                games[data.gameID].clearTimer();
-                games[data.gameID].timer = setTimeout(function(){
-                    nextTurn(chat, data.gameID, socket.username);
+                games[data.id].clearTimer();
+                games[data.id].timer = setTimeout(function(){
+                    nextTurn(chat, data.id, socket.username);
                 }, turnLen * 1000)
             }
         });
@@ -164,7 +170,7 @@ module.exports = function(app,io){
                 scrollToBottom();
             }
         });
-        
+
         // Somebody left the chat
         socket.on('disconnect', function() {
             // Notify the other person in the chat room
@@ -200,31 +206,43 @@ module.exports = function(app,io){
         });
 
 
-        // Handle the sending of messages
-        socket.on('msg', function(data){
-            var game = games[socket.room];
-            var msg = {player: data.user, msg:data.msg};
-            game.addMsg(msg);
-            gamesdb.addMsgToGame(game.gameID, msg, function() {
-                gamesdb.printGames();
-            });
-            //TODO: ADD MONGO SUPPORT
+            // Handle the sending of messages
+            socket.on('msg', function(data){
 
-            if (game.messages.length >= game.maxLines){
-                socket.emit('end', {
-                    messeages: game.messages
+                var game = games[socket.room];
+                game.addMsg({user: data.user, msg: data.msg});
+                gamesdb.addMsgToGame(game.gameID, data.msg, function() {
+                    gamesdb.printGames();
                 });
-            } else {
-                nextTurn(chat,socket.room,data.user);
-            }
-            // console.log("msgs so far");
-            // console.log(games[socket.room].messages);
-            // When the server receives a message, it sends it to the other person in the room.
-            socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user, img: data.img});
-        });
-    });
-};
+                //TODO: ADD MONGO SUPPORT
 
+                console.log(game);
+                console.log(game.messages.length);
+                console.log(game.maxLines);
+                if (game.messages.length >= game.maxLines){
+                    game.clearTimer();
+                    socket.emit('myend', {
+                        messages: game.messages
+                    });
+                    socket.broadcast.to(socket.room).emit('myend', {
+                        messages: game.messages
+                    });
+                } else {
+                    nextTurn(chat,socket.room,data.user);
+                    socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user, img: data.img});
+                }
+
+
+
+
+			// console.log("msgs so far");
+			// console.log(games[socket.room].messages);
+
+			// When the server receives a message, it sends it to the other person in the room.
+
+		});
+	});
+};
 
 function roomsAndUsersCount (io, namespace) {
     var roomIds = getRoomIds(io, namespace);
@@ -235,10 +253,10 @@ function roomsAndUsersCount (io, namespace) {
     return res;
 }
 
-
 function getRoomIds(io, namespace) {
     var res = [],
         ns = io.of(namespace || "/");    // the default namespace is "/"
+
     if (ns) {
         ns.sockets.forEach(function(sock) {
             if (sock.room) {
@@ -257,10 +275,10 @@ function getRoomIds(io, namespace) {
     return unqRes;
 }
 
-
 function findClientsSocket(io, roomId, namespace) {
     var res = [],
         ns = io.of(namespace || "/");    // the default namespace is "/"
+
     if (ns) {
         for (var id in ns.connected) {
             if (roomId) {
@@ -276,3 +294,5 @@ function findClientsSocket(io, roomId, namespace) {
     }
     return res;
 }
+
+

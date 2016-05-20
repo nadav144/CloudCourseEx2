@@ -5,6 +5,8 @@ $(function () {
     // getting the gameID of the room from the url
     var id = Number(window.location.pathname.match(/\/chat\/(\d+)$/)[1]);
 
+    var timeinterval;
+
     // connect to the socket
     var socket = io();
 
@@ -22,6 +24,7 @@ $(function () {
         personInside = $(".personinside"),
         chatScreen = $(".chatscreen"),
         left = $(".left"),
+        ended = $(".game-ended"),
         noMessages = $(".nomessages"),
         tooManyPeople = $(".toomanypeople");
 
@@ -38,7 +41,12 @@ $(function () {
         textarea = $("#message"),
         messageTimeSent = $(".timesent"),
         players = $("#players"),
+        fullstory = $("#fullstory"),
         chats = $(".chats");
+
+    var onGoing = true;
+
+
 
     // these variables hold images
     var ownerImage = $("#ownerImage"),
@@ -64,6 +72,8 @@ $(function () {
     };
 
     var initializeClock = function initializeClock(id, endtime) {
+
+        clearInterval(timeinterval);
         var clock = document.getElementById(id);
         var minutesSpan = clock.querySelector('.minutes');
         var secondsSpan = clock.querySelector('.seconds');
@@ -80,7 +90,7 @@ $(function () {
         }
 
             updateClock();
-        var timeinterval = setInterval(updateClock, 1000);
+        timeinterval = setInterval(updateClock, 1000);
     };
 
 
@@ -122,7 +132,7 @@ $(function () {
     }
 
 
-    // on connection to server get the gameID of person's room
+    // on connection to server get the id of person's room
     socket.on('connect', function () {
         socket.emit('load', id);
     });
@@ -144,6 +154,7 @@ $(function () {
                 e.preventDefault();
 
                 name = $.trim(yourName.val());
+                var lines = parseInt($.trim(gameLines.val()));
 
                 if (name.length < 1) {
                     alert("Please enter a nick name longer than 1 character!");
@@ -155,7 +166,7 @@ $(function () {
                     showMessage("inviteSomebody");
 
                     // call the server-side function 'login' and send user's parameters
-                    socket.emit('login', {user: name, avatar: "", gameID: id});
+                    socket.emit('login', {user: name, avatar: "", id: id, gameLines:lines});
 
                 }
 
@@ -182,7 +193,7 @@ $(function () {
                     return;
                 }
 
-                socket.emit('login', {user: name, avatar: "", gameID: id, gamelines: gameLines.val()});
+                socket.emit('login', {user: name, avatar: "", id: id});
 
 
             });
@@ -194,7 +205,7 @@ $(function () {
 
     socket.on('startChat', function (data) {
 
-        if (data.boolean && data.gameID == id) {
+        if (data.boolean && data.id == id) {
 
 
 
@@ -224,6 +235,14 @@ $(function () {
         }
 
     });
+
+    socket.on('myend', function (data) {
+        console.log("end");
+        console.log(data.messages);
+        showMessage('myend', data);
+
+    });
+
 
 
 
@@ -344,10 +363,56 @@ $(function () {
 
     function showMessage(status, data) {
 
+        if (!onGoing){
+            console.log("after end");
+            return;
+        }
+
+        console.log(status);
+
+        ended.css('display', 'none');
+
         if (status === "connected") {
 
             section.children().css('display', 'none');
             onConnect.fadeIn(1200);
+        }
+
+        else if (status === 'myend') {
+            onGoing = false;
+            section.children().css('display', 'none');
+            chatScreen.css('display', 'none');
+            footer.css('display', 'none');
+            ended.css('display', 'inline');
+
+            var all = "";
+
+            data.messages.forEach(function (m){
+                all +='<p>' + m.msg + '</p>';
+
+            });
+
+            console.log(all);
+            $("#fullstory").html(all);
+
+
+            //setTimeout(function () {
+            //
+            //}, 2000);
+            ////onConnect.fadeOut(1200, function () {
+            //    inviteSomebody.fadeOut(1200);
+            //});
+            //personInside.fadeOut(1200, function(){
+            //    console.log("here");
+            //    console.log(data.messeages);
+
+            //
+            //    section.children().css('display', 'none');
+                //footer.css('display', 'none');
+                //fullstory.fadeIn(1200);
+            //});
+
+
         }
 
         else if (status === "inviteSomebody") {
