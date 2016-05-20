@@ -15,10 +15,12 @@ var games;
 gamesdb.getAllGames(function(err, result) {
     if (err) {
         console.log(err);
+        games = {};
     } else {
         games = result;
         console.log("got all games from the database");
         console.log(games);
+        //TODO: need to check which games no longer valid after being pulled from the db.
     }
 });
 
