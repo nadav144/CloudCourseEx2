@@ -60,9 +60,9 @@ function getGames (callback) {
         console.log("db still not up, could not retrieve games. retrying...");
         setTimeout(function() {
             getGames(callback);
-        }, 100);
+        }, 200);
     } else {
-        throw "db did not start properly. could not retrieve games";
+        callback("db did not start properly. could not retrieve games", null);
     }
 }
 
