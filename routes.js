@@ -8,51 +8,57 @@ var turnLen = 30;
 // Export a function, so that we can pass 
 // the app and io instances from the app.js file:
 
-var gamesdb = require('./gamesdb.js');
 
+module.exports = function (app, io) {
 
-var games;
-gamesdb.getAllGames(function(err, result) {
-    if (err) {
-        console.log(err);
-        games = {};
-    } else {
-        games = result;
-        console.log("got all games from the database");
-        console.log(games);
-        //TODO: need to check which games no longer valid after being pulled from the db.
+    var gamesdb = require('./gamesdb.js');
+
+    var games = {};
+
+    function getGames() {
+        gamesdb.getAllGames(function (err, result) {
+            if (err) {
+                console.log(err);
+                games = {};
+            } else {
+                games = {};
+                result.forEach(function (data) {
+                    games[data.gameID] = new game.game(data.gameID, data.curTurn, data.maxLines, data.messages, data.players);
+                })
+
+                console.log("got all games from the database");
+                console.log(games);
+                //TODO: need to check which games no longer valid after being pulled from the db.
+            }
+        });
     }
-});
+
+    getGames();
 
 
-
-
-module.exports = function(app,io){
-
-
-    function nextTurn(chat, id, turnUser){
+    function nextTurn(chat, id, turnUser) {
 
         var room = findClientsSocket(io, id);
         var curruser = games[id].curTurn;
-        if (turnUser != curruser){
+        if (turnUser != curruser) {
             // we were called before already
             return;
         }
 
         var usernames = [];
-        for (var i=0; i< room.length; i++){
+        for (var i = 0; i < room.length; i++) {
             usernames.push(room[i].username);
         }
         var nextUser = "";
         var currIndex = usernames.indexOf(curruser);
-        if (currIndex == usernames.length - 1){
+        if (currIndex == usernames.length - 1) {
             nextUser = usernames[0];
         } else { // if index is -1, we will choose 0
             nextUser = usernames[currIndex + 1];
         }
 
         games[id].curTurn = nextUser;
-        gamesdb.setCurTurn(id, nextUser, function() {
+        gamesdb.setCurTurn(id, nextUser, usernames, function () {
             console.log("updated cur turn of game: " + console.log(id) + " to be player " + console.log(nextUser));
             // gamesdb.printGames();
         });
@@ -69,22 +75,23 @@ module.exports = function(app,io){
 
 
         games[id].clearTimer();
-        games[id].timer = setTimeout(function(){
+        games[id].timer = setTimeout(function () {
             var timeruser = nextUser;
             nextTurn(chat, id, timeruser);
         }, turnLen * 1000)
     }
-    app.get('/', function(req, res){
+
+    app.get('/', function (req, res) {
         // Render views/home.html
         res.render('home');
     });
-    app.get('/create', function(req,res){
+    app.get('/create', function (req, res) {
         // Generate unique gameID for the room
         var id = Math.round((Math.random() * 1000000));
         // Redirect to the random room
-        res.redirect('/chat/'+id);
+        res.redirect('/chat/' + id);
     });
-    app.get('/chat/:gameID', function(req,res){
+    app.get('/chat/:gameID', function (req, res) {
         // Render the chant.html view
         res.render('chat');
     });
@@ -96,23 +103,35 @@ module.exports = function(app,io){
 
         // When the client emits the 'load' event, reply with the
         // number of people in this chat room
-        socket.on('load',function(data){
-            var room = findClientsSocket(io,data);
-            if(room.length === 0 ) {
-                socket.emit('peopleinchat', {number: 0});
-            }
-            else if(room.length >= 1) {
+        socket.on('load', function (data) {
+            var room = findClientsSocket(io, data);
+            getGames();
+            console.log(games[data]);
+            if (!games[data]) {
+                if (room.length === 0) {
+                    socket.emit('peopleinchat', {number: 0});
+                }
+                else if (room.length >= 1) {
+                    socket.emit('peopleinchat', {
+                        number: room.length,
+                        user: room[0].username,
+                        avatar: room[0].avatar,
+                        gameID: data
+                    });
+                }
+            } else {
                 socket.emit('peopleinchat', {
-                    number: room.length,
-                    user: room[0].username,
-                    avatar: room[0].avatar,
+                    number: games[data].players.length,
+                    user: games[data].curTurn,
+                    avatar: "",
                     gameID: data
                 });
             }
         });
         // When the client emits 'login', save his name and avatar,
         // and add them to the room
-        socket.on('login', function(data) {
+        socket.on('login', function (data) {
+            console.log("in login");
             var room = findClientsSocket(io, data.id);
             // Only two people per room are allowed
             //console.log(room.length);
@@ -120,10 +139,14 @@ module.exports = function(app,io){
                 var newGame = new game.game(data.id, data.user, data.gameLines);
                 games[data.id] = newGame;
                 console.log("adding game " + data.id.toString() + " to the db");
-                gamesdb.addGame(newGame, function() {gamesdb.printGames()});
+                gamesdb.addGame(newGame, function () {
+                    gamesdb.printGames()
+                });
             } else {
                 games[data.id].addPlayer(data.user);
-                gamesdb.addPlayerToGame(data.id, data.user, function () {gamesdb.printGames()});
+                gamesdb.addPlayerToGame(data.id, data.user, function () {
+                    gamesdb.printGames()
+                });
             }
             // Use the socket object to store data. Each client gets
             // their own unique socket object
@@ -134,12 +157,14 @@ module.exports = function(app,io){
             socket.emit('img', socket.avatar);
             // Add the client to the room
             socket.join(data.id);
+            console.log("here")
+            console.log(room.length);
             if (room.length >= 1) {
                 var usernames = [],
                     avatars = [];
                 //console.log("room");
                 //console.log(room.length);
-                for (var i=0; i< room.length; i++){
+                for (var i = 0; i < room.length; i++) {
                     //console.log("user");
                     usernames.push(room[i].username);
                 }
@@ -157,22 +182,22 @@ module.exports = function(app,io){
                     avatars: avatars
                 });
                 games[data.id].clearTimer();
-                games[data.id].timer = setTimeout(function(){
+                games[data.id].timer = setTimeout(function () {
                     nextTurn(chat, data.id, socket.username);
                 }, turnLen * 1000)
             }
         });
-        socket.on('receive', function(data){
+        socket.on('receive', function (data) {
             //console.log("in socket.on recieve");
             //console.log(data);
-            if(data.msg.trim().length) {
+            if (data.msg.trim().length) {
                 createChatMessage(data.msg, data.user, data.img, moment());
                 scrollToBottom();
             }
         });
 
         // Somebody left the chat
-        socket.on('disconnect', function() {
+        socket.on('disconnect', function () {
             // Notify the other person in the chat room
             // that his partner has left
             socket.broadcast.to(this.room).emit('leave', {
@@ -195,7 +220,7 @@ module.exports = function(app,io){
                     });
                 } else {
                     console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
-                    gamesdb.delPlayerFromGame(this.room, this.username, function() {
+                    gamesdb.delPlayerFromGame(this.room, this.username, function () {
                         gamesdb.printGames();
                     })
                 }
@@ -206,48 +231,46 @@ module.exports = function(app,io){
         });
 
 
-            // Handle the sending of messages
-            socket.on('msg', function(data){
+        // Handle the sending of messages
+        socket.on('msg', function (data) {
 
-                var game = games[socket.room];
-                game.addMsg({user: data.user, msg: data.msg});
-                gamesdb.addMsgToGame(game.gameID, data.msg, function() {
-                    gamesdb.printGames();
+            var game = games[socket.room];
+            game.addMsg({user: data.user, msg: data.msg});
+            gamesdb.addMsgToGame(game.gameID, data.msg, function () {
+                gamesdb.printGames();
+            });
+            //TODO: ADD MONGO SUPPORT
+
+            console.log(game);
+            console.log(game.messages.length);
+            console.log(game.maxLines);
+            if (game.messages.length >= game.maxLines) {
+                game.clearTimer();
+                socket.emit('myend', {
+                    messages: game.messages
                 });
-                //TODO: ADD MONGO SUPPORT
-
-                console.log(game);
-                console.log(game.messages.length);
-                console.log(game.maxLines);
-                if (game.messages.length >= game.maxLines){
-                    game.clearTimer();
-                    socket.emit('myend', {
-                        messages: game.messages
-                    });
-                    socket.broadcast.to(socket.room).emit('myend', {
-                        messages: game.messages
-                    });
-                } else {
-                    nextTurn(chat,socket.room,data.user);
-                    socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user, img: data.img});
-                }
+                socket.broadcast.to(socket.room).emit('myend', {
+                    messages: game.messages
+                });
+            } else {
+                nextTurn(chat, socket.room, data.user);
+                socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user, img: data.img});
+            }
 
 
+            // console.log("msgs so far");
+            // console.log(games[socket.room].messages);
 
+            // When the server receives a message, it sends it to the other person in the room.
 
-			// console.log("msgs so far");
-			// console.log(games[socket.room].messages);
-
-			// When the server receives a message, it sends it to the other person in the room.
-
-		});
-	});
+        });
+    });
 };
 
-function roomsAndUsersCount (io, namespace) {
+function roomsAndUsersCount(io, namespace) {
     var roomIds = getRoomIds(io, namespace);
     var res = [];
-    roomIds.forEach(function(room) {
+    roomIds.forEach(function (room) {
         res.push({gameID: room, count: findClientsSocket(io, room, namespace).length})
     });
     return res;
@@ -258,7 +281,7 @@ function getRoomIds(io, namespace) {
         ns = io.of(namespace || "/");    // the default namespace is "/"
 
     if (ns) {
-        ns.sockets.forEach(function(sock) {
+        ns.sockets.forEach(function (sock) {
             if (sock.room) {
                 res.push(sock.room);
             }
@@ -266,7 +289,7 @@ function getRoomIds(io, namespace) {
     }
     var unqRes = [];
     var resLen = res.length;
-    for (var i = 0 ; i < resLen ; i++) {
+    for (var i = 0; i < resLen; i++) {
         var curRoom = res.pop();
         if (res.indexOf(curRoom) < 0) {
             unqRes.push(curRoom);

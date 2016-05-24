@@ -5,7 +5,7 @@ var collection;
 var ready = 0;
 
 // Connect to the db
-MongoClient.connect("mongodb://localhost:27017/exampleDb", function(err, db) {
+MongoClient.connect("mongodb://13.69.82.120:27017/example_db", function(err, db) {
     if(err) {
         ready = -1;
         return console.dir(err);
@@ -123,9 +123,9 @@ module.exports.addMsgToGame = function (id, msg, callback) {
     }
 };
 
-module.exports.setCurTurn = function (id, player, callback) {
+module.exports.setCurTurn = function (id, player, usernames, callback) {
     if (collection) {
-        collection.update({gameID:id}, {$set:{curTurn:player}}, {w:1}, function(err, result) {
+        collection.update({gameID:id}, {$set:{curTurn:player, players: usernames}}, {w:1}, function(err, result) {
             if (callback) {
                 callback(err, result);
             }

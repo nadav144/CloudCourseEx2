@@ -1,12 +1,24 @@
 
-module.exports.game = function (roomid, player, gamelines) {
+module.exports.game = function (roomid, player, gamelines, messeages, players) {
     this.gameID = roomid;
-    this.messages = [];
+
     this.curTurn = player;
     this.maxLines = gamelines;
     this.timer = null;
 
-    this.players = [player];
+    if (players){
+        this.players = players
+    } else {
+        this.players = [player];
+    }
+
+    if (messeages){
+        this.messages = messeages;
+    } else {
+        this.messages = [];
+    }
+
+
     this.latestUpdate = Date.now(); //todo: maybe redundant
 
 
