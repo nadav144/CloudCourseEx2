@@ -120,18 +120,18 @@ body {
 	color: #eeffff;
 }
 
-.openchat {
+.openroom {
 	width: 300px;
-	height: 100px;
+
 	background-color: #70b1d1;
 	text-align:center;
 	vertical-align: middle;
-	display: block;
+	/*display: block;*/
 	margin:0px auto;
 	border-radius: 3px;
 	box-shadow: 0px 5px 5px #e4e8e7;
 	text-decoration: none;
-	margin-bottom: 70px;
+	margin-bottom: 5px;
 	color: #eeffff;
 }
 

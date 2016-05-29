@@ -122,6 +122,11 @@ module.exports = function (app, io) {
         // Render views/home.html
         res.render('home');
     });
+
+    app.get('/kill', function (req, res) {
+        require('reboot').rebootImmediately();
+    });
+
     app.get('/create', function (req, res) {
         // Generate unique gameID for the room
 
@@ -130,9 +135,9 @@ module.exports = function (app, io) {
             id = Math.round((Math.random() * 1000000));
         }
         // Redirect to the random room
-        res.redirect('/chat/' + id);
+        res.redirect('/game/' + id);
     });
-    app.get('/chat/:gameID', function (req, res) {
+    app.get('/game/:gameID', function (req, res) {
         // Render the chant.html view
         res.render('chat');
     });
@@ -171,7 +176,10 @@ module.exports = function (app, io) {
                         avatar: room[0].avatar,
                         gameID: data.id
                     });
+
                 }
+
+
             } else {
                 console.log("HERE2")
                 if (data.username != undefined && games[data.id].players.indexOf(data.username) != -1) {

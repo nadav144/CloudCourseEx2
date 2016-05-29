@@ -8,10 +8,10 @@ $(function() {
     socket.on('populateRoomsResponse', function (roomIds) {
         roomIds.forEach(function(room) {
             var li = $(
-                //'<li><p><a href="chat/'+ gameID.toString() +'">' + gameID.toString() + '</a></p></li>'
 
-                '<a title="Join" href="chat/'+ room.gameID.toString() +'">' +
-                '<div class="openchat">' +
+
+                '<a title="Join" href="game/'+ room.gameID.toString() +'">' +
+                '<div class="openroom">' +
                 '<div gameID="big">' + room.gameID.toString() + '</div>' +
                 '<div gameID="small">Users: ' + room.count.toString() + '</div>' +
                 '</a>'

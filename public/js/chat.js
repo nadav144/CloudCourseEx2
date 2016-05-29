@@ -6,7 +6,7 @@ $(function () {
 
 
     // getting the gameID of the room from the url
-    var id = Number(window.location.pathname.match(/\/chat\/(\d+)$/)[1]);
+    var id = Number(window.location.pathname.match(/\/game\/(\d+)$/)[1]);
 
 
     var timeinterval;
@@ -453,7 +453,7 @@ $(function () {
             onConnect.css("display", "none");
             left.fadeOut(1200, function () {
                 inviteSomebody.fadeOut(1200, function () {
-                    noMessages.fadeIn(1200);
+                    //noMessages.fadeIn(1200);
                     footer.fadeIn(1200);
 
                 });
@@ -467,7 +467,7 @@ $(function () {
 
             onConnect.css("display", "none");
             personInside.fadeOut(1200, function () {
-                noMessages.fadeIn(1200);
+                //noMessages.fadeIn(1200);
                 footer.fadeIn(1200);
 
 
