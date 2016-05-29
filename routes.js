@@ -35,11 +35,31 @@ module.exports = function (app, io) {
 
     getGames();
 
+    function removePlayerFromGame(id, username) {
+        if (games[id]) {
+            if (!games[id].removePlayer(username)) {
+
+                delete games[id.toString()];
+                // console.log("removing room: " + this.room.toString() + " from the db");
+                gamesdb.deleteGame(id, function () {/*gamesdb.printGames();*/
+                });
+            } else {
+                // console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
+                gamesdb.delPlayerFromGame(id, username, function () {/*gamesdb.printGames();*/
+                })
+            }
+        }
+    }
+
 
     function nextTurn(chat, id, turnUser) {
 
         console.log("next room for room " + id.toString());
         console.log(turnUser);
+
+        if (!games[id]){
+            console.log("game " + id.toString() + " not in the db. killing turns");
+        }
 
         var room = findClientsSocket(io, id);
         var curruser = games[id].curTurn;
@@ -64,6 +84,7 @@ module.exports = function (app, io) {
             if (onlineusernames.indexOf(nextUser) != -1) {
                 break;
             } else {
+                removePlayerFromGame(id, nextUser);
                 nextUser = undefined;
             }
         }
@@ -252,23 +273,12 @@ module.exports = function (app, io) {
             // leave the room
             socket.leave(socket.room);
 
-            if (games[this.room]) {
-                if (!games[this.room].removePlayer(this.username)) {
+            removePlayerFromGame(this.room, this.username);
 
-                    delete games[this.room.toString()];
-                    // console.log("removing room: " + this.room.toString() + " from the db");
-                    gamesdb.deleteGame(this.room, function () {/*gamesdb.printGames();*/
-                    });
-                } else {
-                    // console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
-                    gamesdb.delPlayerFromGame(this.room, this.username, function () {/*gamesdb.printGames();*/
-                    })
-                }
-            } else {
-                console.log("in socket.on(disconnect) invalidly.");
-                // console.log(games);
-            }
         });
+
+
+
 
 
         // Handle the sending of messages
@@ -292,6 +302,9 @@ module.exports = function (app, io) {
                 socket.broadcast.to(socket.room).emit('myend', {
                     messages: game.messages
                 });
+                // game ended - delete the game
+                delete games[socket.room];
+                gamesdb.deleteGame(socket.room, function () {/*gamesdb.printGames();*/ });
             } else {
                 nextTurn(chat, socket.room, data.user);
                 socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user, img: data.img});
@@ -305,7 +318,11 @@ module.exports = function (app, io) {
 
         });
     });
+
+
 };
+
+
 
 function roomsAndUsersCount(dbGames, io, namespace) {
     var res = [];
