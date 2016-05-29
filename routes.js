@@ -4,7 +4,7 @@
 // Use the gravatar module, to turn email addresses into avatar images:
 var gravatar = require('gravatar');
 var game = require('./game.js');
-var turnLen = 30;
+var turnLen = 15;
 // Export a function, so that we can pass 
 // the app and io instances from the app.js file:
 
@@ -38,14 +38,18 @@ module.exports = function (app, io) {
 
     function nextTurn(chat, id, turnUser) {
 
+        console.log("next room for room " + id.toString());
+        console.log(turnUser);
+
         var room = findClientsSocket(io, id);
         var curruser = games[id].curTurn;
-        if (turnUser != curruser) {
-            // we were called before already
-            return;
-        }
+        //if (turnUser != curruser) {
+        //    // we were called before already
+        //    return;
+        //}
 
         var players = games[id].players;
+        console.log(players);
         var onlineusernames = [];
         for (var i = 0; i < room.length; i++) {
             onlineusernames.push(room[i].username);
@@ -53,8 +57,10 @@ module.exports = function (app, io) {
         var nextUser = "";
         var currIndex = players.indexOf(curruser);
 
+        console.log(onlineusernames);
+
         for (var i=1; i <= players.length;i++){
-            nextUser = players[(currIndex + 1) % players.length];
+            nextUser = players[(currIndex + i) % players.length];
             if (onlineusernames.indexOf(nextUser) != -1){
                 break;
             } else {
@@ -62,13 +68,15 @@ module.exports = function (app, io) {
             }
         }
 
+        console.log(nextUser);
+
         if (nextUser == undefined){
             console.log("no one is online, killing next turn timer");
             return;
         }
 
         games[id].curTurn = nextUser;
-        gamesdb.setCurTurn(id, nextUser, usernames, function () {/* gamesdb.printGames();*/});
+        gamesdb.setCurTurn(id, nextUser, players, function () {/* gamesdb.printGames();*/});
 
         //console.log(currIndex);
         //console.log(nextUser);
@@ -160,27 +168,16 @@ module.exports = function (app, io) {
             socket.emit('img', socket.avatar);
             // Add the client to the room
             socket.join(data.id);
-            console.log("here")
+            console.log("here");
             console.log(room.length);
-            if (room.length >= 1) {
+            if (games[data.id].players.length >= 1) {
                 var usernames = [],
                     avatars = [];
-                //console.log("room");
-                //console.log(room.length);
-                for (var i = 0; i < room.length; i++) {
-                    //console.log("user");
-                    usernames.push(room[i].username);
-                }
-                usernames.push(socket.username);
-                //console.log(usernames);
-                avatars.push(room[0].avatar);
-                avatars.push(socket.avatar);
-                // Send the startChat event to all the people in the
-                // room, along with a list of people that are in it.
+
                 chat.in(data.id).emit('startChat', {
                     boolean: true,
                     id: data.id,
-                    users: usernames,
+                    users: games[data.id].players,
                     currUser: games[data.id].curTurn,
                     avatars: avatars
                 });
