@@ -2,8 +2,12 @@
 
 $(function () {
 
+
+
+
     // getting the gameID of the room from the url
     var id = Number(window.location.pathname.match(/\/chat\/(\d+)$/)[1]);
+
 
     var timeinterval;
 
@@ -134,7 +138,7 @@ $(function () {
 
     // on connection to server get the id of person's room
     socket.on('connect', function () {
-        socket.emit('load', id);
+        socket.emit('load', {id:id, username: name});
     });
 
     // save the gravatar url

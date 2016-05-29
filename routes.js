@@ -102,7 +102,11 @@ module.exports = function (app, io) {
     });
     app.get('/create', function (req, res) {
         // Generate unique gameID for the room
+
         var id = Math.round((Math.random() * 1000000));
+        while (games.hasOwnProperty(id)){
+            id = Math.round((Math.random() * 1000000));
+        }
         // Redirect to the random room
         res.redirect('/chat/' + id);
     });
@@ -119,10 +123,10 @@ module.exports = function (app, io) {
         // When the client emits the 'load' event, reply with the
         // number of people in this chat room
         socket.on('load', function (data) {
-            var room = findClientsSocket(io, data);
+            var room = findClientsSocket(io, data.id);
             getGames();
-            console.log(games[data]);
-            if (!games[data]) {
+            console.log(games[data.id]);
+            if (!games[data.id]) {
                 if (room.length === 0) {
                     socket.emit('peopleinchat', {number: 0});
                 }
@@ -131,15 +135,15 @@ module.exports = function (app, io) {
                         number: room.length,
                         user: room[0].username,
                         avatar: room[0].avatar,
-                        gameID: data
+                        gameID: data.id
                     });
                 }
             } else {
                 socket.emit('peopleinchat', {
-                    number: games[data].players.length,
-                    user: games[data].curTurn,
+                    number: games[data.id].players.length,
+                    user: games[data.id].curTurn,
                     avatar: "",
-                    gameID: data
+                    gameID: data.id
                 });
             }
         });
@@ -147,9 +151,9 @@ module.exports = function (app, io) {
         // and add them to the room
         socket.on('login', function (data) {
             console.log("in login");
+            console.log(data);
             var room = findClientsSocket(io, data.id);
-            // Only two people per room are allowed
-            //console.log(room.length);
+
             if (!games[data.id]) {
                 var newGame = new game.game(data.id, data.user, data.gameLines);
                 games[data.id] = newGame;
@@ -170,7 +174,7 @@ module.exports = function (app, io) {
             socket.join(data.id);
             console.log("here");
             console.log(room.length);
-            if (games[data.id].players.length >= 1) {
+            if (games[data.id].players.length > 1) {
                 var usernames = [],
                     avatars = [];
 
