@@ -141,6 +141,12 @@ $(function () {
         socket.emit('load', {id:id, username: name});
     });
 
+    socket.on('waitload', function(){
+        setTimeout(function () {
+            socket.emit('load', {id:id, username: name});
+        }, 2000);
+    });
+
     // save the gravatar url
     socket.on('img', function (data) {
         img = data;
@@ -148,10 +154,14 @@ $(function () {
 
     // receive the names and avatars of all people in the chat room
     socket.on('peopleinchat', function (data) {
+        console.log("fff");
 
         if (data.number === 0) {
+            console.log(name);
 
-            showMessage("connected");
+            if (name == ""){
+                showMessage("connected");
+            }
 
             loginForm.on('submit', function (e) {
 
@@ -440,10 +450,12 @@ $(function () {
 
         else if (status === "youStartedChatWithNoMessages") {
 
+            onConnect.css("display", "none");
             left.fadeOut(1200, function () {
                 inviteSomebody.fadeOut(1200, function () {
                     noMessages.fadeIn(1200);
                     footer.fadeIn(1200);
+
                 });
             });
 
@@ -453,9 +465,11 @@ $(function () {
 
         else if (status === "heStartedChatWithNoMessages") {
 
+            onConnect.css("display", "none");
             personInside.fadeOut(1200, function () {
                 noMessages.fadeIn(1200);
                 footer.fadeIn(1200);
+
 
             });
 

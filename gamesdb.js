@@ -4,6 +4,9 @@ var gamesdb;
 var collection;
 var ready = 0;
 
+
+
+
 // Connect to the db
 MongoClient.connect("mongodb://13.69.82.120:27017/example_db", function(err, db) {
     if(err) {
@@ -145,6 +148,10 @@ module.exports.addPlayerToGame = function (id, player, callback) {
     } else {
         console.log("db is down");
     }
+};
+
+module.exports.isUp = function (){
+    return !ready == 0;
 };
 
 module.exports.delPlayerFromGame = function (id, player, callback) {

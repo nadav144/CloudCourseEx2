@@ -27,7 +27,7 @@ module.exports = function (app, io) {
                 });
 
                 console.log("got all games from the database");
-                console.log(games);
+
                 //TODO: need to check which games no longer valid after being pulled from the db.
             }
         });
@@ -59,9 +59,9 @@ module.exports = function (app, io) {
 
         console.log(onlineusernames);
 
-        for (var i=1; i <= players.length;i++){
+        for (var i = 1; i <= players.length; i++) {
             nextUser = players[(currIndex + i) % players.length];
-            if (onlineusernames.indexOf(nextUser) != -1){
+            if (onlineusernames.indexOf(nextUser) != -1) {
                 break;
             } else {
                 nextUser = undefined;
@@ -70,13 +70,14 @@ module.exports = function (app, io) {
 
         console.log(nextUser);
 
-        if (nextUser == undefined){
+        if (nextUser == undefined) {
             console.log("no one is online, killing next turn timer");
             return;
         }
 
         games[id].curTurn = nextUser;
-        gamesdb.setCurTurn(id, nextUser, players, function () {/* gamesdb.printGames();*/});
+        gamesdb.setCurTurn(id, nextUser, players, function () {/* gamesdb.printGames();*/
+        });
 
         //console.log(currIndex);
         //console.log(nextUser);
@@ -104,7 +105,7 @@ module.exports = function (app, io) {
         // Generate unique gameID for the room
 
         var id = Math.round((Math.random() * 1000000));
-        while (games.hasOwnProperty(id)){
+        while (games.hasOwnProperty(id)) {
             id = Math.round((Math.random() * 1000000));
         }
         // Redirect to the random room
@@ -123,10 +124,22 @@ module.exports = function (app, io) {
         // When the client emits the 'load' event, reply with the
         // number of people in this chat room
         socket.on('load', function (data) {
-            var room = findClientsSocket(io, data.id);
+
+            if (!gamesdb.isUp()){
+                socket.emit('waitload');
+                return
+            }
+
             getGames();
+            console.log("ON LOAD");
+            console.log(data.id);
+            console.log(games);
+            console.log(games[data.id.toString()]);
+            var room = findClientsSocket(io, data.id);
+
             console.log(games[data.id]);
             if (!games[data.id]) {
+
                 if (room.length === 0) {
                     socket.emit('peopleinchat', {number: 0});
                 }
@@ -139,12 +152,36 @@ module.exports = function (app, io) {
                     });
                 }
             } else {
-                socket.emit('peopleinchat', {
-                    number: games[data.id].players.length,
-                    user: games[data.id].curTurn,
-                    avatar: "",
-                    gameID: data.id
-                });
+                console.log("HERE2")
+                if (data.username != undefined && games[data.id].players.indexOf(data.username) != -1) {
+                    console.log("GOT USERNAME ALREADAY! CoNNECTING")
+                    socket.username = data.username;
+                    socket.room = data.id;
+                    console.log(socket.room);
+                    socket.avatar = gravatar.url("", {s: '140', r: 'x', d: 'mm'});
+                    socket.join(data.id);
+
+                    chat.in(data.id).emit('startChat', {
+                        boolean: true,
+                        id: data.id,
+                        users: games[data.id].players,
+                        currUser: games[data.id].curTurn,
+                        avatars: []
+                    });
+                    games[data.id].clearTimer();
+                    games[data.id].timer = setTimeout(function () {
+                        nextTurn(chat, data.id, socket.username);
+                    }, turnLen * 1000)
+
+                } else {
+                    console.log("in people chat 2")
+                    socket.emit('peopleinchat', {
+                        number: games[data.id].players.length,
+                        user: games[data.id].curTurn,
+                        avatar: "",
+                        gameID: data.id
+                    });
+                }
             }
         });
         // When the client emits 'login', save his name and avatar,
@@ -158,10 +195,12 @@ module.exports = function (app, io) {
                 var newGame = new game.game(data.id, data.user, data.gameLines);
                 games[data.id] = newGame;
                 // console.log("adding game " + data.id.toString() + " to the db");
-                gamesdb.addGame(newGame, function () {/*gamesdb.printGames()*/});
+                gamesdb.addGame(newGame, function () {/*gamesdb.printGames()*/
+                });
             } else {
                 games[data.id].addPlayer(data.user);
-                gamesdb.addPlayerToGame(data.id, data.user, function () {/*gamesdb.printGames();*/});
+                gamesdb.addPlayerToGame(data.id, data.user, function () {/*gamesdb.printGames();*/
+                });
             }
             // Use the socket object to store data. Each client gets
             // their own unique socket object
@@ -218,10 +257,12 @@ module.exports = function (app, io) {
 
                     delete games[this.room.toString()];
                     // console.log("removing room: " + this.room.toString() + " from the db");
-                    gamesdb.deleteGame(this.room, function () {/*gamesdb.printGames();*/});
+                    gamesdb.deleteGame(this.room, function () {/*gamesdb.printGames();*/
+                    });
                 } else {
                     // console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
-                    gamesdb.delPlayerFromGame(this.room, this.username, function () {/*gamesdb.printGames();*/})
+                    gamesdb.delPlayerFromGame(this.room, this.username, function () {/*gamesdb.printGames();*/
+                    })
                 }
             } else {
                 console.log("in socket.on(disconnect) invalidly.");
@@ -234,8 +275,10 @@ module.exports = function (app, io) {
         socket.on('msg', function (data) {
 
             var game = games[socket.room];
+            console.log(socket.room);
             game.addMsg({user: data.user, msg: data.msg});
-            gamesdb.addMsgToGame(game.gameID, data.msg, function () {/*gamesdb.printGames();*/});
+            gamesdb.addMsgToGame(game.gameID, data.msg, function () {/*gamesdb.printGames();*/
+            });
             //TODO: ADD MONGO SUPPORT
 
             console.log(game);
