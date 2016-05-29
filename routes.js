@@ -295,7 +295,7 @@ module.exports = function (app, io) {
             var game = games[socket.room];
             console.log(socket.room);
             game.addMsg({user: data.user, msg: data.msg});
-            gamesdb.addMsgToGame(game.gameID, data.msg, function () {/*gamesdb.printGames();*/
+            gamesdb.addMsgToGame(game.gameID, {user: data.user, msg: data.msg}, function () {/*gamesdb.printGames();*/
             });
             //TODO: ADD MONGO SUPPORT
 
@@ -326,13 +326,9 @@ module.exports = function (app, io) {
 
         });
     });
-
-
 };
 
-
-
-function roomsAndUsersCount(dbGames, io, namespace) {
+function roomsAndUsersCount(dbGames) {
     var res = [];
     for (var id in dbGames) {
         if (dbGames.hasOwnProperty(id)) {
