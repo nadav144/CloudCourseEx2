@@ -24,7 +24,7 @@ module.exports = function (app, io) {
                 games = {};
                 result.forEach(function (data) {
                     games[data.gameID] = new game.game(data.gameID, data.curTurn, data.maxLines, data.messages, data.players);
-                })
+                });
 
                 console.log("got all games from the database");
                 console.log(games);
@@ -58,10 +58,7 @@ module.exports = function (app, io) {
         }
 
         games[id].curTurn = nextUser;
-        gamesdb.setCurTurn(id, nextUser, usernames, function () {
-            console.log("updated cur turn of game: " + console.log(id) + " to be player " + console.log(nextUser));
-            // gamesdb.printGames();
-        });
+        gamesdb.setCurTurn(id, nextUser, usernames, function () {/* gamesdb.printGames();*/});
 
         //console.log(currIndex);
         //console.log(nextUser);
@@ -98,7 +95,7 @@ module.exports = function (app, io) {
     // Initialize a new socket.io application, named 'chat'
     var chat = io.on('connection', function (socket) {
         socket.on('populateRoomsRequest', function () {
-            socket.emit('populateRoomsResponse', roomsAndUsersCount(io));
+            socket.emit('populateRoomsResponse', roomsAndUsersCount(games, io));
         });
 
         // When the client emits the 'load' event, reply with the
@@ -138,15 +135,11 @@ module.exports = function (app, io) {
             if (!games[data.id]) {
                 var newGame = new game.game(data.id, data.user, data.gameLines);
                 games[data.id] = newGame;
-                console.log("adding game " + data.id.toString() + " to the db");
-                gamesdb.addGame(newGame, function () {
-                    gamesdb.printGames()
-                });
+                // console.log("adding game " + data.id.toString() + " to the db");
+                gamesdb.addGame(newGame, function () {/*gamesdb.printGames()*/});
             } else {
                 games[data.id].addPlayer(data.user);
-                gamesdb.addPlayerToGame(data.id, data.user, function () {
-                    gamesdb.printGames()
-                });
+                gamesdb.addPlayerToGame(data.id, data.user, function () {/*gamesdb.printGames();*/});
             }
             // Use the socket object to store data. Each client gets
             // their own unique socket object
@@ -213,16 +206,11 @@ module.exports = function (app, io) {
                 if (!games[this.room].removePlayer(this.username)) {
 
                     delete games[this.room.toString()];
-
-                    console.log("removing room: " + this.room.toString() + " from the db");
-                    gamesdb.deleteGame(this.room, function () {
-                        gamesdb.printGames();
-                    });
+                    // console.log("removing room: " + this.room.toString() + " from the db");
+                    gamesdb.deleteGame(this.room, function () {/*gamesdb.printGames();*/});
                 } else {
-                    console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
-                    gamesdb.delPlayerFromGame(this.room, this.username, function () {
-                        gamesdb.printGames();
-                    })
+                    // console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
+                    gamesdb.delPlayerFromGame(this.room, this.username, function () {/*gamesdb.printGames();*/})
                 }
             } else {
                 console.log("in socket.on(disconnect) invalidly.");
@@ -236,9 +224,7 @@ module.exports = function (app, io) {
 
             var game = games[socket.room];
             game.addMsg({user: data.user, msg: data.msg});
-            gamesdb.addMsgToGame(game.gameID, data.msg, function () {
-                gamesdb.printGames();
-            });
+            gamesdb.addMsgToGame(game.gameID, data.msg, function () {/*gamesdb.printGames();*/});
             //TODO: ADD MONGO SUPPORT
 
             console.log(game);
@@ -267,12 +253,13 @@ module.exports = function (app, io) {
     });
 };
 
-function roomsAndUsersCount(io, namespace) {
-    var roomIds = getRoomIds(io, namespace);
+function roomsAndUsersCount(dbGames, io, namespace) {
     var res = [];
-    roomIds.forEach(function (room) {
-        res.push({gameID: room, count: findClientsSocket(io, room, namespace).length})
-    });
+    for (var id in dbGames) {
+        if (dbGames.hasOwnProperty(id)) {
+            res.push({gameID: id, count: dbGames[id.toString()].players.length});
+        }
+    }
     return res;
 }
 
