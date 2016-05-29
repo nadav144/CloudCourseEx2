@@ -45,16 +45,26 @@ module.exports = function (app, io) {
             return;
         }
 
-        var usernames = [];
+        var players = games[id].players;
+        var onlineusernames = [];
         for (var i = 0; i < room.length; i++) {
-            usernames.push(room[i].username);
+            onlineusernames.push(room[i].username);
         }
         var nextUser = "";
-        var currIndex = usernames.indexOf(curruser);
-        if (currIndex == usernames.length - 1) {
-            nextUser = usernames[0];
-        } else { // if index is -1, we will choose 0
-            nextUser = usernames[currIndex + 1];
+        var currIndex = players.indexOf(curruser);
+
+        for (var i=1; i <= players.length;i++){
+            nextUser = players[(currIndex + 1) % players.length];
+            if (onlineusernames.indexOf(nextUser) != -1){
+                break;
+            } else {
+                nextUser = undefined;
+            }
+        }
+
+        if (nextUser == undefined){
+            console.log("no one is online, killing next turn timer");
+            return;
         }
 
         games[id].curTurn = nextUser;
@@ -66,7 +76,7 @@ module.exports = function (app, io) {
             boolean: true,
             gameID: id,
             nextUser: nextUser,
-            users: usernames
+            users: players
 
         });
 
