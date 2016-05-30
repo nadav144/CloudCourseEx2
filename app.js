@@ -48,6 +48,10 @@ if (ssl) {
 	require('./config')(app, io);
 	require('./routes')(app, io);
 
+	http.createServer(function (req, res) {
+		res.redirect('https://cloudex2sh.northeurope.cloudapp.azure.com'+req.url)
+	}).listen(80);
+
 
 } else {
 	port = process.env.PORT || 80;
@@ -56,6 +60,8 @@ if (ssl) {
 // the express app, which allows them to coexist.
 
 	io = require('socket.io').listen(app.listen(port));
+
+
 
 // Require the configuration and the routes files, and pass
 // the app and io as arguments to the returned functions.
