@@ -202,7 +202,7 @@ $(function () {
                     return;
                 }
 
-                if (name == data.user) {
+                if (name === data.user || ( data.players != undefined && data.players.indexOf(name) != -1)) {
                     alert("There already is a \"" + name + "\" in this room!");
                     return;
                 }
@@ -359,6 +359,7 @@ $(function () {
         li.find('p').text(msg);
         li.find('b').text(user);
 
+        chats.empty();
         chats.append(li);
 
         messageTimeSent = $(".timesent");

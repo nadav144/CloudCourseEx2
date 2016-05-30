@@ -59,6 +59,7 @@ module.exports = function (app, io) {
 
         if (!games[id]){
             console.log("game " + id.toString() + " not in the db. killing turns");
+            return;
         }
 
         var room = findClientsSocket(io, id);
@@ -181,7 +182,6 @@ module.exports = function (app, io) {
 
 
             } else {
-                console.log("HERE2")
                 if (data.username != undefined && games[data.id].players.indexOf(data.username) != -1) {
                     console.log("GOT USERNAME ALREADAY! CoNNECTING")
                     socket.username = data.username;
@@ -207,6 +207,7 @@ module.exports = function (app, io) {
                     socket.emit('peopleinchat', {
                         number: games[data.id].players.length,
                         user: games[data.id].curTurn,
+                        players: games[data.id].players,
                         avatar: "",
                         gameID: data.id
                     });

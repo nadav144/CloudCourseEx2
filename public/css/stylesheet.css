@@ -135,6 +135,12 @@ body {
 	color: #eeffff;
 }
 
+
+.game-ended{
+	text-align:center;
+}
+
+
 #create:visited {
 	color: #eeffff;
 	text-decoration: none;
