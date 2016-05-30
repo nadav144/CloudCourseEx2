@@ -48,9 +48,12 @@ if (ssl) {
 	require('./config')(app, io);
 	require('./routes')(app, io);
 
+	// Redirect from http port 80 to https
 	http.createServer(function (req, res) {
-		res.redirect('https://cloudex2sh.northeurope.cloudapp.azure.com'+req.url)
+		res.writeHead(301, { "Location": "https://" + req.headers['host'] + req.url });
+		res.end();
 	}).listen(80);
+
 
 
 } else {
