@@ -293,7 +293,13 @@ module.exports = function (app, io) {
         // Handle the sending of messages
         socket.on('msg', function (data) {
 
+            if (!games[socket.room]){
+                return;
+            }
+
             var game = games[socket.room];
+
+
             console.log(socket.room);
             game.addMsg({user: data.user, msg: data.msg});
             gamesdb.addMsgToGame(game.gameID, {user: data.user, msg: data.msg}, function () {/*gamesdb.printGames();*/
