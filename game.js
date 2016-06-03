@@ -1,4 +1,12 @@
-
+/**
+ * Game object
+ * @param roomid
+ * @param player
+ * @param gamelines
+ * @param messeages
+ * @param players
+ * @returns {exports}
+ */
 module.exports.game = function (roomid, player, gamelines, messeages, players) {
     this.gameID = roomid;
 

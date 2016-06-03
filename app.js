@@ -1,7 +1,3 @@
-// This is the main file of our chat app. It initializes a new 
-// express.js instance, requires the config and routes files
-// and listens on a port. Start the application by running
-// 'node app.js' in your terminal
 
 var express = require('express'),
 	crypto = require('crypto'),
@@ -30,20 +26,16 @@ try {
 var port;
 var io;
 
-// This is needed if the app is run on heroku:
+// if successfully set up SSL certificate, open the app on port 443
 if (ssl) {
 	port = process.env.PORT || 443;
 
-// Initialize a new socket.io object. It is bound to
-// the express app, which allows them to coexist.
 	var https = require('https');
 	var server = https.createServer(options, app);
 	io = require('socket.io')(server);
 	server.listen(port, function() {
-		console.log('Your application is running on https://localhost:' + port);
+		// console.log('Your application is running on https://localhost:' + port);
 	});
-// Require the configuration and the routes files, and pass
-// the app and io as arguments to the returned functions.
 
 	require('./config')(app, io);
 	require('./routes')(app, io);
@@ -54,20 +46,11 @@ if (ssl) {
 		res.end();
 	}).listen(80);
 
-
-
+// if SSL is not available, open the app on port 80	
 } else {
 	port = process.env.PORT || 80;
 
-// Initialize a new socket.io object. It is bound to
-// the express app, which allows them to coexist.
-
 	io = require('socket.io').listen(app.listen(port));
-
-
-
-// Require the configuration and the routes files, and pass
-// the app and io as arguments to the returned functions.
 
 	require('./config')(app, io);
 	require('./routes')(app, io);

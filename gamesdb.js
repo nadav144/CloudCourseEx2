@@ -4,56 +4,24 @@ var gamesdb;
 var collection;
 var ready = 0;
 
-
-
-
-// Connect to the db
+/**
+ * Connect to the database
+ */
 MongoClient.connect("mongodb://13.69.82.120:27017/example_db", function(err, db) {
     if(err) {
         ready = -1;
         return console.dir(err);
+    } else {
+        gamesdb = db;
+        collection = db.collection('test');
+        ready = 1;
     }
-    gamesdb = db;
-    collection = db.collection('test');
-    // var collection = db.collection('test');
-    // var doc = {mykey:1, fieldtoupdate:1};
-
-    // collection.insert(doc, {w:1}, function(err, result) {
-    //     collection.update({mykey:1}, {$set:{fieldtoupdate:2}}, {w:1}, function(err, result) {
-    //         if (err) {
-    //             console.dir(err);
-    //         }
-    //         collection.find().toArray(function(err, items) {
-    //             console.log(items);
-    //         });
-    //     });
-    // });
-    //
-    // var doc2 = {mykey:2, docs:[{doc1:1}]};
-    //
-    // collection.insert(doc2, {w:1}, function(err, result) {
-    //     collection.update({mykey:2}, {$push:{docs:{doc2:1}}}, {w:1}, function(err, result) {
-    //         collection.find().toArray(function(err, items) {
-    //             console.log(items);
-    //         });
-    //     });
-    // });
-
-    // collection.remove();
-
-    // printCollection(collection);
-    // if (collection.find({mykey:1}))
-    // collection.insert(doc, {w:1}, function(err, res) {
-    //     printCollection(collection);
-    // });
-    
-    ready = 1;
-
-
-    // clearDB(); //TODO: THIS CALL CLEARS THE DB EVERY TIME THE SERVER RESTARTS
-    // console.log("get rid of this db clear");
 });
 
+/**
+ * Get all games from the database
+ * @param callback
+ */
 function getGames (callback) {
     if (ready === 1) {
         collection.find().toArray(function(err, items) {
@@ -68,10 +36,13 @@ function getGames (callback) {
         callback("db did not start properly. could not retrieve games", null);
     }
 }
-
 module.exports.getAllGames = getGames;
 
-
+/**
+ * Print all games in the database
+ * @param collection
+ * @param callback
+ */
 function printCollection (collection, callback) {
     if (collection) {
         collection.find().toArray(function(err, items) {
@@ -85,6 +56,10 @@ function printCollection (collection, callback) {
     }
 }
 
+/**
+ * Print all games in the database
+ * @param callback
+ */
 module.exports.printGames = function(callback) {
     printCollection(collection, callback);
 };
@@ -102,6 +77,11 @@ module.exports.addGame = function (game, callback) {
 
 };
 
+/**
+ * Delete a game from the database
+ * @param id
+ * @param callback
+ */
 module.exports.deleteGame = function (id, callback) {
     if (collection) {
         collection.remove({gameID:id}, {w:1}, function(err, result) {
@@ -114,6 +94,12 @@ module.exports.deleteGame = function (id, callback) {
     }
 };
 
+/**
+ * Add a single message to a game in the database
+ * @param id
+ * @param msg
+ * @param callback
+ */
 module.exports.addMsgToGame = function (id, msg, callback) {
     if (collection) {
         collection.update({gameID:id}, {$push:{messages:msg}}, {w:1}, function(err, result) {
@@ -126,6 +112,13 @@ module.exports.addMsgToGame = function (id, msg, callback) {
     }
 };
 
+/**
+ * Update the current turn to a player in a game
+ * @param id
+ * @param player
+ * @param usernames
+ * @param callback
+ */
 module.exports.setCurTurn = function (id, player, usernames, callback) {
     if (collection) {
         collection.update({gameID:id}, {$set:{curTurn:player, players: usernames}}, {w:1}, function(err, result) {
@@ -138,6 +131,12 @@ module.exports.setCurTurn = function (id, player, usernames, callback) {
     }
 };
 
+/**
+ * Add a new player to a game
+ * @param id
+ * @param player
+ * @param callback
+ */
 module.exports.addPlayerToGame = function (id, player, callback) {
     if (collection) {
         collection.update({gameID:id}, {$push:{players:player}}, {w:1}, function(err, result) {
@@ -150,10 +149,20 @@ module.exports.addPlayerToGame = function (id, player, callback) {
     }
 };
 
+/**
+ * Checks if the database is up and ready
+ * @returns {boolean}
+ */
 module.exports.isUp = function (){
-    return !ready == 0;
+    return !(ready === 0);
 };
 
+/**
+ * Delete a player from a game
+ * @param id
+ * @param player
+ * @param callback
+ */
 module.exports.delPlayerFromGame = function (id, player, callback) {
     if (collection) {
         collection.update({gameID:id}, {$pull:{players:player}}, {w:1}, function(err, result) {
@@ -166,7 +175,9 @@ module.exports.delPlayerFromGame = function (id, player, callback) {
     }
 };
 
-
+/**
+ * Clear the database
+ */
 function clearDB() {
     if (collection) {
         collection.remove();

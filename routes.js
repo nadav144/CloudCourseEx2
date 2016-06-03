@@ -1,20 +1,16 @@
-// This file is required by app.js. It sets up event listeners
-// for the two main URL endpoints of the application - /create and /chat/:gameID
-// and listens for socket.io messages.
-// Use the gravatar module, to turn email addresses into avatar images:
+
 var gravatar = require('gravatar');
 var game = require('./game.js');
 var turnLen = 15;
-// Export a function, so that we can pass 
-// the app and io instances from the app.js file:
-
 
 module.exports = function (app, io) {
 
     var gamesdb = require('./gamesdb.js');
-
     var games = {};
 
+    /**
+     * Populate the local games object with games from the database
+     */
     function getGames() {
         gamesdb.getAllGames(function (err, result) {
             if (err) {
@@ -27,35 +23,39 @@ module.exports = function (app, io) {
                 });
 
                 console.log("got all games from the database");
-
-                //TODO: need to check which games no longer valid after being pulled from the db.
             }
         });
     }
-
     getGames();
 
+    /**
+     * Delete a player from a game
+     * @param id
+     * @param username
+     */
     function removePlayerFromGame(id, username) {
         if (games[id]) {
             if (!games[id].removePlayer(username)) {
-
                 delete games[id.toString()];
                 // console.log("removing room: " + this.room.toString() + " from the db");
-                gamesdb.deleteGame(id, function () {/*gamesdb.printGames();*/
-                });
+                gamesdb.deleteGame(id, function () {/*gamesdb.printGames();*/});
             } else {
                 // console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
-                gamesdb.delPlayerFromGame(id, username, function () {/*gamesdb.printGames();*/
-                })
+                gamesdb.delPlayerFromGame(id, username, function () {/*gamesdb.printGames();*/})
             }
         }
     }
 
-
+    /**
+     * Advance the turn of a game
+     * @param chat
+     * @param id
+     * @param turnUser
+     */
     function nextTurn(chat, id, turnUser) {
 
-        console.log("next room for room " + id.toString());
-        console.log(turnUser);
+        // console.log("next room for room " + id.toString());
+        // console.log(turnUser);
 
         if (!games[id]){
             console.log("game " + id.toString() + " not in the db. killing turns");
@@ -64,13 +64,9 @@ module.exports = function (app, io) {
 
         var room = findClientsSocket(io, id);
         var curruser = games[id].curTurn;
-        //if (turnUser != curruser) {
-        //    // we were called before already
-        //    return;
-        //}
 
         var players = games[id].players;
-        console.log(players);
+        // console.log(players);
         var onlineusernames = [];
         for (var i = 0; i < room.length; i++) {
             onlineusernames.push(room[i].username);
@@ -78,7 +74,7 @@ module.exports = function (app, io) {
         var nextUser = "";
         var currIndex = players.indexOf(curruser);
 
-        console.log(onlineusernames);
+        // console.log(onlineusernames);
 
         for (var i = 1; i <= players.length; i++) {
             nextUser = players[(currIndex + i) % players.length];
@@ -90,7 +86,7 @@ module.exports = function (app, io) {
             }
         }
 
-        console.log(nextUser);
+        // console.log(nextUser);
 
         if (nextUser == undefined) {
             console.log("no one is online, killing next turn timer");
@@ -98,8 +94,7 @@ module.exports = function (app, io) {
         }
 
         games[id].curTurn = nextUser;
-        gamesdb.setCurTurn(id, nextUser, players, function () {/* gamesdb.printGames();*/
-        });
+        gamesdb.setCurTurn(id, nextUser, players, function () {/* gamesdb.printGames();*/});
 
         //console.log(currIndex);
         //console.log(nextUser);
@@ -124,6 +119,9 @@ module.exports = function (app, io) {
         res.render('home');
     });
 
+    /**
+     * reboot the server
+     */
     app.get('/kill', function (req, res) {
         require('reboot').rebootImmediately();
     });
@@ -139,7 +137,6 @@ module.exports = function (app, io) {
         res.redirect('/game/' + id);
     });
     app.get('/game/:gameID', function (req, res) {
-        // Render the chant.html view
         res.render('chat');
     });
     // Initialize a new socket.io application, named 'chat'
@@ -158,10 +155,10 @@ module.exports = function (app, io) {
             }
 
             getGames();
-            console.log("ON LOAD");
-            console.log(data.id);
-            console.log(games);
-            console.log(games[data.id.toString()]);
+            // console.log("ON LOAD");
+            // console.log(data.id);
+            // console.log(games);
+            // console.log(games[data.id.toString()]);
             var room = findClientsSocket(io, data.id);
 
             console.log(games[data.id]);
@@ -183,10 +180,10 @@ module.exports = function (app, io) {
 
             } else {
                 if (data.username != undefined && games[data.id].players.indexOf(data.username) != -1) {
-                    console.log("GOT USERNAME ALREADAY! CoNNECTING")
+                    // console.log("GOT USERNAME ALREADAY! CoNNECTING")
                     socket.username = data.username;
                     socket.room = data.id;
-                    console.log(socket.room);
+                    // console.log(socket.room);
                     socket.avatar = gravatar.url("", {s: '140', r: 'x', d: 'mm'});
                     socket.join(data.id);
 
@@ -217,8 +214,8 @@ module.exports = function (app, io) {
         // When the client emits 'login', save his name and avatar,
         // and add them to the room
         socket.on('login', function (data) {
-            console.log("in login");
-            console.log(data);
+            // console.log("in login");
+            // console.log(data);
             var room = findClientsSocket(io, data.id);
 
             if (!games[data.id]) {
@@ -241,8 +238,8 @@ module.exports = function (app, io) {
             socket.emit('img', socket.avatar);
             // Add the client to the room
             socket.join(data.id);
-            console.log("here");
-            console.log(room.length);
+            // console.log("here");
+            // console.log(room.length);
             if (games[data.id].players.length > 1) {
                 var usernames = [],
                     avatars = [];
@@ -300,15 +297,13 @@ module.exports = function (app, io) {
             var game = games[socket.room];
 
 
-            console.log(socket.room);
+            // console.log(socket.room);
             game.addMsg({user: data.user, msg: data.msg});
-            gamesdb.addMsgToGame(game.gameID, {user: data.user, msg: data.msg}, function () {/*gamesdb.printGames();*/
-            });
-            //TODO: ADD MONGO SUPPORT
+            gamesdb.addMsgToGame(game.gameID, {user: data.user, msg: data.msg}, function () {/*gamesdb.printGames();*/});
 
-            console.log(game);
-            console.log(game.messages.length);
-            console.log(game.maxLines);
+            // console.log(game);
+            // console.log(game.messages.length);
+            // console.log(game.maxLines);
             if (game.messages.length >= game.maxLines) {
                 game.clearTimer();
                 socket.emit('myend', {
@@ -325,16 +320,15 @@ module.exports = function (app, io) {
                 socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user, img: data.img});
             }
 
-
-            // console.log("msgs so far");
-            // console.log(games[socket.room].messages);
-
-            // When the server receives a message, it sends it to the other person in the room.
-
         });
     });
 };
 
+/**
+ * get all room IDs and player count in each room
+ * @param dbGames
+ * @returns {Array}
+ */
 function roomsAndUsersCount(dbGames) {
     var res = [];
     for (var id in dbGames) {
@@ -345,28 +339,13 @@ function roomsAndUsersCount(dbGames) {
     return res;
 }
 
-function getRoomIds(io, namespace) {
-    var res = [],
-        ns = io.of(namespace || "/");    // the default namespace is "/"
-
-    if (ns) {
-        ns.sockets.forEach(function (sock) {
-            if (sock.room) {
-                res.push(sock.room);
-            }
-        });
-    }
-    var unqRes = [];
-    var resLen = res.length;
-    for (var i = 0; i < resLen; i++) {
-        var curRoom = res.pop();
-        if (res.indexOf(curRoom) < 0) {
-            unqRes.push(curRoom);
-        }
-    }
-    return unqRes;
-}
-
+/**
+ * find all client sockets
+ * @param io
+ * @param roomId
+ * @param namespace
+ * @returns {Array}
+ */
 function findClientsSocket(io, roomId, namespace) {
     var res = [],
         ns = io.of(namespace || "/");    // the default namespace is "/"

@@ -1,4 +1,3 @@
-// This file is executed in the browser, when people visit /chat/<random id>
 
 $(function () {
 
@@ -50,15 +49,12 @@ $(function () {
 
     var onGoing = true;
 
-
-
     // these variables hold images
     var ownerImage = $("#ownerImage"),
         leftImage = $("#leftImage"),
         noMessagesImage = $("#noMessagesImage");
 
     var myturn;
-
 
     var getTimeRemaining = function getTimeRemaining(endtime) {
         var t = Date.parse(endtime) - Date.parse(new Date());
@@ -133,7 +129,7 @@ $(function () {
             players.append(p);
 
         });
-    }
+    };
 
 
     // on connection to server get the id of person's room
@@ -256,9 +252,7 @@ $(function () {
         showMessage('myend', data);
 
     });
-
-
-
+    
 
     socket.on('nextturn', function (data) {
 
@@ -268,12 +262,6 @@ $(function () {
 
     });
 
-    //socket.on('tooMany', function(data){
-    //
-    //	if(data.boolean && name.length === 0) {
-    //
-    //		showMessage('tooManyPeople');
-    //	}
     //});
 
     socket.on('receive', function (data) {
@@ -503,7 +491,5 @@ $(function () {
             tooManyPeople.fadeIn(1200);
         }
     }
-
-
 
 });
