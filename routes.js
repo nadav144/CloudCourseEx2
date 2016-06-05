@@ -1,5 +1,5 @@
 
-var gravatar = require('gravatar');
+
 var game = require('./game.js');
 var turnLen = 120;
 
@@ -154,7 +154,7 @@ module.exports = function (app, io) {
                     socket.emit('peopleingame', {
                         number: room.length,
                         user: room[0].username,
-                        avatar: room[0].avatar,
+
                         gameID: data.id
                     });
 
@@ -165,7 +165,7 @@ module.exports = function (app, io) {
                 if (data.username != undefined && games[data.id].players.indexOf(data.username) != -1) {
                     socket.username = data.username;
                     socket.room = data.id;
-                    socket.avatar = gravatar.url("", {s: '140', r: 'x', d: 'mm'});
+
                     socket.join(data.id);
 
                     gameio.in(data.id).emit('startGame', {
@@ -173,7 +173,7 @@ module.exports = function (app, io) {
                         id: data.id,
                         users: games[data.id].players,
                         currUser: games[data.id].curTurn,
-                        avatars: []
+
                     });
                     games[data.id].clearTimer();
                     games[data.id].timer = setTimeout(function () {
@@ -185,13 +185,13 @@ module.exports = function (app, io) {
                         number: games[data.id].players.length,
                         user: games[data.id].curTurn,
                         players: games[data.id].players,
-                        avatar: "",
+
                         gameID: data.id
                     });
                 }
             }
         });
-        // When the client emits 'login', save his name and avatar,
+        // When the client emits 'login', save his name,
         // and add them to the room
         socket.on('login', function (data) {
             var room = findClientsSocket(io, data.id);
@@ -210,21 +210,19 @@ module.exports = function (app, io) {
             // their own unique socket object
             socket.username = data.user;
             socket.room = data.id;
-            socket.avatar = gravatar.url(data.avatar, {s: '140', r: 'x', d: 'mm'});
-            // Tell the person what he should use for an avatar
-            socket.emit('img', socket.avatar);
+
+
+
             // Add the client to the room
             socket.join(data.id);
             if (games[data.id].players.length > 1) {
-                var usernames = [],
-                    avatars = [];
-
+                var usernames = [];
                 gameio.in(data.id).emit('startGame', {
                     boolean: true,
                     id: data.id,
                     users: games[data.id].players,
-                    currUser: games[data.id].curTurn,
-                    avatars: avatars
+                    currUser: games[data.id].curTurn
+
                 });
                 games[data.id].clearTimer();
                 games[data.id].timer = setTimeout(function () {
@@ -246,8 +244,8 @@ module.exports = function (app, io) {
             socket.broadcast.to(this.room).emit('leave', {
                 boolean: true,
                 room: this.room,
-                user: this.username,
-                avatar: this.avatar
+                user: this.username
+
             });
             // leave the room
             socket.leave(socket.room);

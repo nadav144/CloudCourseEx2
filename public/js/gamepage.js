@@ -140,12 +140,9 @@ $(function () {
         }, 2000);
     });
 
-    // save the gravatar url
-    socket.on('img', function (data) {
-        img = data;
-    });
 
-    // receive the names and avatars of all people in the game
+
+    // receive the names and of all people in the game
     socket.on('peopleingame', function (data) {
 
 
@@ -171,7 +168,7 @@ $(function () {
                     showMessage("inviteSomebody");
 
                     // call the server-side function 'login' and send user's parameters
-                    socket.emit('login', {user: name, avatar: "", id: id, gameLines:lines});
+                    socket.emit('login', {user: name, id: id, gameLines:lines});
 
                 }
 
@@ -198,7 +195,7 @@ $(function () {
                     return;
                 }
 
-                socket.emit('login', {user: name, avatar: "", id: id});
+                socket.emit('login', {user: name, id: id});
 
 
             });
@@ -319,7 +316,7 @@ $(function () {
         var li = $(
             '<li class=' + who + '>' +
             '<div class="image">' +
-            '<img src=' + imgg + ' />' +
+            '<img src="../img/unnamed.jpg" />' +
             '<b></b>' +
             '<i class="timesent" data-time=' + now + '></i> ' +
             '</div>' +
@@ -395,7 +392,7 @@ $(function () {
             personInside.fadeIn(1200);
 
             chatNickname.text(data.user);
-            ownerImage.attr("src", data.avatar);
+
         }
 
         else if (status === "youStartedGameWithNoMessages") {
@@ -410,7 +407,7 @@ $(function () {
             });
 
             friends = data.users.join();
-            noMessagesImage.attr("src", data.avatars[1]);
+
         }
 
         else if (status === "heStartedGameWithNoMessages") {
@@ -424,7 +421,7 @@ $(function () {
             });
 
             friends = data.users.join();
-            noMessagesImage.attr("src", data.avatars[0]);
+
 
 
 
@@ -438,7 +435,7 @@ $(function () {
 
         else if (status === "somebodyLeft") {
 
-            leftImage.attr("src", data.avatar);
+
             leftNickname.text(data.user);
 
             section.children().css('display', 'none');
