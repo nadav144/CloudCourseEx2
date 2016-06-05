@@ -1,9 +1,6 @@
 
 $(function () {
 
-
-
-
     // getting the gameID of the room from the url
     var id = Number(window.location.pathname.match(/\/game\/(\d+)$/)[1]);
 
@@ -25,7 +22,7 @@ $(function () {
         onConnect = $(".connected"),
         inviteSomebody = $(".invite-textfield"),
         personInside = $(".personinside"),
-        chatScreen = $(".chatscreen"),
+        gameScreen = $(".chatscreen"),
         left = $(".left"),
         ended = $(".game-ended"),
         noMessages = $(".nomessages"),
@@ -97,7 +94,7 @@ $(function () {
 
     var updatePlayers = function(users, next){
 
-        var turnLen = 15;
+        var turnLen = 120;
         var deadline = new Date(Date.parse(new Date()) + turnLen * 1000);
         initializeClock('clockdiv', deadline);
 
@@ -148,13 +145,11 @@ $(function () {
         img = data;
     });
 
-    // receive the names and avatars of all people in the chat room
-    socket.on('peopleinchat', function (data) {
-        console.log("fff");
+    // receive the names and avatars of all people in the game
+    socket.on('peopleingame', function (data) {
+
 
         if (data.number === 0) {
-            console.log(name);
-
             if (name == ""){
                 showMessage("connected");
             }
@@ -185,7 +180,7 @@ $(function () {
 
         else {
 
-            showMessage("personinchat", data);
+            showMessage("personingame", data);
 
             loginForm.on('submit', function (e) {
 
@@ -213,7 +208,7 @@ $(function () {
 
     // Other useful
 
-    socket.on('startChat', function (data) {
+    socket.on('startGame', function (data) {
 
         if (data.boolean && data.id == id) {
 
@@ -221,11 +216,11 @@ $(function () {
 
             if (name === data.users[0]) {
 
-                showMessage("youStartedChatWithNoMessages", data);
+                showMessage("youStartedGameWithNoMessages", data);
             }
             else {
 
-                showMessage("heStartedChatWithNoMessages", data);
+                showMessage("heStartedGameWithNoMessages", data);
             }
 
 
@@ -236,19 +231,7 @@ $(function () {
         }
     });
 
-    socket.on('leave', function (data) {
-
-        if (data.boolean && id == data.room) {
-
-            //showMessage("somebodyLeft", data);
-            //chats.empty();
-        }
-
-    });
-
     socket.on('myend', function (data) {
-        console.log("end");
-        console.log(data.messages);
         showMessage('myend', data);
 
     });
@@ -266,13 +249,13 @@ $(function () {
 
     socket.on('receive', function (data) {
 
-        showMessage('chatStarted');
+        showMessage('gameStarted');
 
         if (data.msg.trim().length) {
             if (myturn) {
-                createChatMessage(data.msg, data.user, data.img, moment());
+                createMessage(data.msg, data.user, data.img, moment());
             } else {
-                createChatMessage("\<hidden message\>", data.user, data.img, moment());
+                createMessage("\<hidden message\>", data.user, data.img, moment());
             }
             scrollToBottom();
         }
@@ -295,10 +278,10 @@ $(function () {
 
         // Create a new chat message and display it directly
 
-        showMessage("chatStarted");
+        showMessage("gameStarted");
 
         if (textarea.val().trim().length) {
-            createChatMessage(textarea.val(), name, img, moment());
+            createMessage(textarea.val(), name, img, moment());
             scrollToBottom();
 
             // Send the message to the other person in the chat
@@ -322,7 +305,7 @@ $(function () {
 
     // Function that creates a new chat message
 
-    function createChatMessage(msg, user, imgg, now) {
+    function createMessage(msg, user, imgg, now) {
 
         var who = '';
 
@@ -367,11 +350,8 @@ $(function () {
     function showMessage(status, data) {
 
         if (!onGoing){
-            console.log("after end");
             return;
         }
-
-        console.log(status);
 
         ended.css('display', 'none');
 
@@ -384,7 +364,7 @@ $(function () {
         else if (status === 'myend') {
             onGoing = false;
             section.children().css('display', 'none');
-            chatScreen.css('display', 'none');
+            gameScreen.css('display', 'none');
             footer.css('display', 'none');
             ended.css('display', 'inline');
 
@@ -395,26 +375,7 @@ $(function () {
 
             });
 
-            console.log(all);
             $("#fullstory").html(all);
-
-
-            //setTimeout(function () {
-            //
-            //}, 2000);
-            ////onConnect.fadeOut(1200, function () {
-            //    inviteSomebody.fadeOut(1200);
-            //});
-            //personInside.fadeOut(1200, function(){
-            //    console.log("here");
-            //    console.log(data.messeages);
-
-            //
-            //    section.children().css('display', 'none');
-                //footer.css('display', 'none');
-                //fullstory.fadeIn(1200);
-            //});
-
 
         }
 
@@ -428,7 +389,7 @@ $(function () {
             });
         }
 
-        else if (status === "personinchat") {
+        else if (status === "personingame") {
 
             onConnect.css("display", "none");
             personInside.fadeIn(1200);
@@ -437,7 +398,7 @@ $(function () {
             ownerImage.attr("src", data.avatar);
         }
 
-        else if (status === "youStartedChatWithNoMessages") {
+        else if (status === "youStartedGameWithNoMessages") {
 
             onConnect.css("display", "none");
             left.fadeOut(1200, function () {
@@ -452,7 +413,7 @@ $(function () {
             noMessagesImage.attr("src", data.avatars[1]);
         }
 
-        else if (status === "heStartedChatWithNoMessages") {
+        else if (status === "heStartedGameWithNoMessages") {
 
             onConnect.css("display", "none");
             personInside.fadeOut(1200, function () {
@@ -469,10 +430,10 @@ $(function () {
 
         }
 
-        else if (status === "chatStarted") {
+        else if (status === "gameStarted") {
 
             section.children().css('display', 'none');
-            chatScreen.css('display', 'block');
+            gameScreen.css('display', 'block');
         }
 
         else if (status === "somebodyLeft") {

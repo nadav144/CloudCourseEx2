@@ -1,7 +1,7 @@
 
 var gravatar = require('gravatar');
 var game = require('./game.js');
-var turnLen = 15;
+var turnLen = 120;
 
 module.exports = function (app, io) {
 
@@ -37,10 +37,8 @@ module.exports = function (app, io) {
         if (games[id]) {
             if (!games[id].removePlayer(username)) {
                 delete games[id.toString()];
-                // console.log("removing room: " + this.room.toString() + " from the db");
                 gamesdb.deleteGame(id, function () {/*gamesdb.printGames();*/});
             } else {
-                // console.log("removing player: " + this.username.toString() + " from room " + this.room.toString());
                 gamesdb.delPlayerFromGame(id, username, function () {/*gamesdb.printGames();*/})
             }
         }
@@ -48,14 +46,11 @@ module.exports = function (app, io) {
 
     /**
      * Advance the turn of a game
-     * @param chat
+     * @param gameio
      * @param id
      * @param turnUser
      */
-    function nextTurn(chat, id, turnUser) {
-
-        // console.log("next room for room " + id.toString());
-        // console.log(turnUser);
+    function nextTurn(gameio, id, turnUser) {
 
         if (!games[id]){
             console.log("game " + id.toString() + " not in the db. killing turns");
@@ -66,15 +61,12 @@ module.exports = function (app, io) {
         var curruser = games[id].curTurn;
 
         var players = games[id].players;
-        // console.log(players);
         var onlineusernames = [];
         for (var i = 0; i < room.length; i++) {
             onlineusernames.push(room[i].username);
         }
         var nextUser = "";
         var currIndex = players.indexOf(curruser);
-
-        // console.log(onlineusernames);
 
         for (var i = 1; i <= players.length; i++) {
             nextUser = players[(currIndex + i) % players.length];
@@ -86,8 +78,6 @@ module.exports = function (app, io) {
             }
         }
 
-        // console.log(nextUser);
-
         if (nextUser == undefined) {
             console.log("no one is online, killing next turn timer");
             return;
@@ -96,9 +86,7 @@ module.exports = function (app, io) {
         games[id].curTurn = nextUser;
         gamesdb.setCurTurn(id, nextUser, players, function () {/* gamesdb.printGames();*/});
 
-        //console.log(currIndex);
-        //console.log(nextUser);
-        chat.in(id).emit('nextturn', {
+        gameio.in(id).emit('nextturn', {
             boolean: true,
             gameID: id,
             nextUser: nextUser,
@@ -110,7 +98,7 @@ module.exports = function (app, io) {
         games[id].clearTimer();
         games[id].timer = setTimeout(function () {
             var timeruser = nextUser;
-            nextTurn(chat, id, timeruser);
+            nextTurn(gameio, id, timeruser);
         }, turnLen * 1000)
     }
 
@@ -137,16 +125,16 @@ module.exports = function (app, io) {
         res.redirect('/game/' + id);
     });
     app.get('/game/:gameID', function (req, res) {
-        res.render('chat');
+        res.render('game');
     });
-    // Initialize a new socket.io application, named 'chat'
-    var chat = io.on('connection', function (socket) {
+    // Initialize a new socket.io application
+    var gameio = io.on('connection', function (socket) {
         socket.on('populateRoomsRequest', function () {
             socket.emit('populateRoomsResponse', roomsAndUsersCount(games, io));
         });
 
         // When the client emits the 'load' event, reply with the
-        // number of people in this chat room
+        // number of people in this game room
         socket.on('load', function (data) {
 
             if (!gamesdb.isUp()){
@@ -155,20 +143,15 @@ module.exports = function (app, io) {
             }
 
             getGames();
-            // console.log("ON LOAD");
-            // console.log(data.id);
-            // console.log(games);
-            // console.log(games[data.id.toString()]);
             var room = findClientsSocket(io, data.id);
 
-            console.log(games[data.id]);
             if (!games[data.id]) {
 
                 if (room.length === 0) {
-                    socket.emit('peopleinchat', {number: 0});
+                    socket.emit('peopleingame', {number: 0});
                 }
                 else if (room.length >= 1) {
-                    socket.emit('peopleinchat', {
+                    socket.emit('peopleingame', {
                         number: room.length,
                         user: room[0].username,
                         avatar: room[0].avatar,
@@ -180,14 +163,12 @@ module.exports = function (app, io) {
 
             } else {
                 if (data.username != undefined && games[data.id].players.indexOf(data.username) != -1) {
-                    // console.log("GOT USERNAME ALREADAY! CoNNECTING")
                     socket.username = data.username;
                     socket.room = data.id;
-                    // console.log(socket.room);
                     socket.avatar = gravatar.url("", {s: '140', r: 'x', d: 'mm'});
                     socket.join(data.id);
 
-                    chat.in(data.id).emit('startChat', {
+                    gameio.in(data.id).emit('startGame', {
                         boolean: true,
                         id: data.id,
                         users: games[data.id].players,
@@ -196,12 +177,11 @@ module.exports = function (app, io) {
                     });
                     games[data.id].clearTimer();
                     games[data.id].timer = setTimeout(function () {
-                        nextTurn(chat, data.id, socket.username);
+                        nextTurn(gameio, data.id, socket.username);
                     }, turnLen * 1000)
 
                 } else {
-                    console.log("in people chat 2")
-                    socket.emit('peopleinchat', {
+                    socket.emit('peopleingame', {
                         number: games[data.id].players.length,
                         user: games[data.id].curTurn,
                         players: games[data.id].players,
@@ -214,14 +194,11 @@ module.exports = function (app, io) {
         // When the client emits 'login', save his name and avatar,
         // and add them to the room
         socket.on('login', function (data) {
-            // console.log("in login");
-            // console.log(data);
             var room = findClientsSocket(io, data.id);
 
             if (!games[data.id]) {
                 var newGame = new game.game(data.id, data.user, data.gameLines);
                 games[data.id] = newGame;
-                // console.log("adding game " + data.id.toString() + " to the db");
                 gamesdb.addGame(newGame, function () {/*gamesdb.printGames()*/
                 });
             } else {
@@ -238,13 +215,11 @@ module.exports = function (app, io) {
             socket.emit('img', socket.avatar);
             // Add the client to the room
             socket.join(data.id);
-            // console.log("here");
-            // console.log(room.length);
             if (games[data.id].players.length > 1) {
                 var usernames = [],
                     avatars = [];
 
-                chat.in(data.id).emit('startChat', {
+                gameio.in(data.id).emit('startGame', {
                     boolean: true,
                     id: data.id,
                     users: games[data.id].players,
@@ -253,13 +228,11 @@ module.exports = function (app, io) {
                 });
                 games[data.id].clearTimer();
                 games[data.id].timer = setTimeout(function () {
-                    nextTurn(chat, data.id, socket.username);
+                    nextTurn(gameio, data.id, socket.username);
                 }, turnLen * 1000)
             }
         });
         socket.on('receive', function (data) {
-            //console.log("in socket.on recieve");
-            //console.log(data);
             if (data.msg.trim().length) {
                 createChatMessage(data.msg, data.user, data.img, moment());
                 scrollToBottom();
@@ -284,9 +257,6 @@ module.exports = function (app, io) {
         });
 
 
-
-
-
         // Handle the sending of messages
         socket.on('msg', function (data) {
 
@@ -296,14 +266,9 @@ module.exports = function (app, io) {
 
             var game = games[socket.room];
 
-
-            // console.log(socket.room);
             game.addMsg({user: data.user, msg: data.msg});
             gamesdb.addMsgToGame(game.gameID, {user: data.user, msg: data.msg}, function () {/*gamesdb.printGames();*/});
 
-            // console.log(game);
-            // console.log(game.messages.length);
-            // console.log(game.maxLines);
             if (game.messages.length >= game.maxLines) {
                 game.clearTimer();
                 socket.emit('myend', {
@@ -316,7 +281,7 @@ module.exports = function (app, io) {
                 delete games[socket.room];
                 gamesdb.deleteGame(socket.room, function () {/*gamesdb.printGames();*/ });
             } else {
-                nextTurn(chat, socket.room, data.user);
+                nextTurn(gameio, socket.room, data.user);
                 socket.broadcast.to(socket.room).emit('receive', {msg: data.msg, user: data.user, img: data.img});
             }
 
