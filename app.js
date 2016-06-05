@@ -1,3 +1,7 @@
+// This is the main file of our chat app. It initializes a new 
+// express.js instance, requires the config and routes files
+// and listens on a port. Start the application by running
+// 'node app.js' in your terminal
 
 var express = require('express'),
 	crypto = require('crypto'),
